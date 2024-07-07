@@ -69,10 +69,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	s := grpc.NewServer()
 	reflection.Register(s)
 	guser.RegisterUserV1Server(s, &server{})
+	
 	fmt.Println(color.GreenString("run server at %s", lis.Addr()))
+
 	if err = s.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
