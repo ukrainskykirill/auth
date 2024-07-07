@@ -18,13 +18,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const grpcPort = 50052
+const grpcPort = 50051
 
-var userRoles = [2]guser.UserRole{guser.UserRole_ADMIN, guser.UserRole_USER}
+var userRoles = [3]guser.UserRole{guser.UserRole_ADMIN, guser.UserRole_USER, guser.UserRole_UNKNOW}
 
 func getRandomRole() guser.UserRole {
 	defaultRole := guser.UserRole_USER
-	rand, err := rand.Int(rand.Reader, big.NewInt(2))
+	rand, err := rand.Int(rand.Reader, big.NewInt(3))
 	if err != nil {
 		return defaultRole
 	}
@@ -73,7 +73,7 @@ func main() {
 	s := grpc.NewServer()
 	reflection.Register(s)
 	guser.RegisterUserV1Server(s, &server{})
-	
+
 	fmt.Println(color.GreenString("run server at %s", lis.Addr()))
 
 	if err = s.Serve(lis); err != nil {
