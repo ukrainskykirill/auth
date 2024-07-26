@@ -181,6 +181,7 @@ func (s *server) Update(ctx context.Context, req *guser.UpdateRequest) (*emptypb
 		args = append(args, req.Name.Value)
 		paramIndex++
 	}
+
 	if req.Email != nil {
 		err := validateEmail(req.Email.Value)
 		if err != nil {
@@ -193,6 +194,7 @@ func (s *server) Update(ctx context.Context, req *guser.UpdateRequest) (*emptypb
 		args = append(args, req.Email.Value)
 		paramIndex++
 	}
+
 	if req.Role != nil {
 		if len(args) > 0 {
 			sql += ", "
@@ -201,6 +203,7 @@ func (s *server) Update(ctx context.Context, req *guser.UpdateRequest) (*emptypb
 		args = append(args, req.Role)
 		paramIndex++
 	}
+
 	if len(args) > 0 {
 		sql += ", updated_at = $" + fmt.Sprintf("%d", paramIndex)
 		args = append(args, time.Now())

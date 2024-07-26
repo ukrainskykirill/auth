@@ -10,10 +10,10 @@ services:
     ports:
       - "${DB_PORT}:5432"
 
-#  migrator:
-#    build:
-#      context: .
-#      dockerfile: migration.Dockerfile
-#    restart: on-failure
-#    environment:
-#      DB_HOST: pg
+  migrator:
+    build:
+      context: .
+      dockerfile: migration.Dockerfile
+    restart: on-failure
+    environment:
+      DB_HOST: pg
