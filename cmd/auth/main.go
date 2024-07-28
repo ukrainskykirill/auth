@@ -8,17 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ukrainskykirill/auth/internal/config"
-	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	pool "github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/fatih/color"
+	pool "github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ukrainskykirill/auth/internal/config"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
