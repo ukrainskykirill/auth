@@ -76,18 +76,8 @@ func (s *server) Create(ctx context.Context, req *guser.CreateRequest) (*guser.C
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	tx, err := s.pg.Begin(ctx)
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Printf("rollback error: %v", err)
-		}
-	}()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	var userID int64
-	err = tx.QueryRow(
+	err = s.pg.QueryRow(
 		ctx,
 		`INSERT INTO users (name, email, role, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
 		req.Name, req.Email, req.Role, password, time.Now(), time.Now(),
@@ -96,10 +86,6 @@ func (s *server) Create(ctx context.Context, req *guser.CreateRequest) (*guser.C
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
 	fmt.Println(color.BlueString("Create user: name - %+v, with ctx: %v", req, ctx))
 	return &guser.CreateResponse{
 		Id: userID,
@@ -107,29 +93,16 @@ func (s *server) Create(ctx context.Context, req *guser.CreateRequest) (*guser.C
 }
 
 func (s *server) Get(ctx context.Context, req *guser.GetRequest) (*guser.GetResponse, error) {
-	tx, err := s.pg.Begin(ctx)
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Printf("rollback error: %v", err)
-		}
-	}()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	var userRow user
-	err = tx.QueryRow(
+	_ = s.pg.QueryRow(
 		ctx,
 		`SELECT name, email, role, created_at, updated_at FROM users WHERE id = $1;`,
 		req.Id,
 	).Scan(&userRow.Name, &userRow.Email, &userRow.Role, &userRow.CreatedAt, &userRow.UpdatedAt)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
-	}
 
 	fmt.Println(color.BlackString("Get user: id %d, with ctx: %v", req.Id, ctx))
 	return &guser.GetResponse{
-		Id:        userRow.ID,
+		Id:        req.Id,
 		Name:      userRow.Name,
 		Email:     userRow.Email,
 		Role:      getRole(userRow.Role),
@@ -139,26 +112,11 @@ func (s *server) Get(ctx context.Context, req *guser.GetRequest) (*guser.GetResp
 }
 
 func (s *server) Delete(ctx context.Context, req *guser.DeleteRequest) (*emptypb.Empty, error) {
-	tx, err := s.pg.Begin(ctx)
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Printf("rollback error: %v", err)
-		}
-	}()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	_, err = tx.Exec(
+	_, err := s.pg.Exec(
 		ctx,
 		`DELETE FROM users WHERE id = $1;`,
 		req.Id,
 	)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -211,26 +169,11 @@ func (s *server) Update(ctx context.Context, req *guser.UpdateRequest) (*emptypb
 	sql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
 	args = append(args, req.Id)
 
-	tx, err := s.pg.Begin(ctx)
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Printf("rollback error: %v", err)
-		}
-	}()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	_, err = tx.Exec(
+	_, err := s.pg.Exec(
 		ctx,
 		sql,
 		args...,
 	)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
