@@ -3,16 +3,18 @@ package model
 import "time"
 
 type UserIn struct {
-	Name     string `db:"name"`
-	Email    string `db:"email"`
-	Role     string `db:"role"`
-	Password []byte `db:"password"`
+	Name            string
+	Email           string
+	Role            string
+	Password        string
+	PasswordConfirm string
 }
 
 type UserInUpdate struct {
-	Name  string `db:"name"`
-	Email string `db:"email"`
-	Role  string `db:"role"`
+	ID    int64
+	Name  string
+	Email string
+	Role  string
 }
 
 type User struct {
