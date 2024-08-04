@@ -40,17 +40,19 @@ func ToUserInFromGUser(user *guser.CreateRequest) *model.UserIn {
 
 func ToUserInUpdateFromGUser(user *guser.UpdateRequest) *model.UserInUpdate {
 	var name, email, role string
+
 	if user.Name != nil {
-		name = user.Name.String()
+		name = user.Name.GetValue()
 	}
 	if user.Email != nil {
-		email = user.Email.String()
+		email = user.Email.GetValue()
 	}
 	if user.Role != nil {
 		role = user.Role.String()
 	}
 
 	return &model.UserInUpdate{
+		ID:    user.Id,
 		Name:  name,
 		Email: email,
 		Role:  role,

@@ -9,7 +9,7 @@ type userServ struct {
 	repo repository.UserRepository
 }
 
-func newServ(userRepo repository.UserRepository) service.UserService {
+func NewServ(userRepo repository.UserRepository) service.UserService {
 	return &userServ{
 		repo: userRepo,
 	}

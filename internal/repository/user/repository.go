@@ -88,6 +88,8 @@ func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
 	sql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
 	args = append(args, user.ID)
 
+	fmt.Println(sql)
+	fmt.Println(args)
 	_, err := r.db.Exec(
 		ctx,
 		sql,
@@ -112,6 +114,7 @@ func (r *repo) Get(ctx context.Context, userID int64) (*model.User, error) {
 		return &model.User{}, err
 	}
 
+	userRow.ID = userID
 	fmt.Println(color.BlackString("Get user: id %d, with ctx: %v", userID, ctx))
 	return converter.ToUserFromRepo(userRow), nil
 }

@@ -11,9 +11,7 @@ RUN chmod +x /bin/goose
 WORKDIR /root
 
 ADD migrations/*.sql migrations/
-ADD migration.sh .
+ADD migrations.sh .
 ADD .env .
 
-RUN chmod +x migration_prod.sh
-
-ENTRYPOINT ["bash", "migration.sh"]
+ENTRYPOINT ["bash", "migrations.sh"]
