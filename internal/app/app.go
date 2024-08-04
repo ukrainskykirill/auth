@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/ukrainskykirill/auth/internal/closer"
+	"github.com/ukrainskykirill/auth/internal/config"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -40,6 +41,7 @@ func (a *App) Run(_ context.Context) error {
 
 func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
+		a.initConfig,
 		a.initServiceProvider,
 		a.initGRPCServer,
 	}
@@ -49,6 +51,15 @@ func (a *App) initDeps(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *App) initConfig(_ context.Context) error {
+	err := config.LoadConfig()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -70,7 +81,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 }
 
 func (a *App) runGRPCServer() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", a.serviceProvider.AppConfig().GRPC.Port))
+	lis, err := net.Listen("tcp", a.serviceProvider.GRPCConfig().Address())
 	if err != nil {
 		log.Fatal(err)
 	}

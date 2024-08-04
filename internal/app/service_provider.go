@@ -15,7 +15,8 @@ import (
 )
 
 type serviceProvider struct {
-	config *config.AppConfig
+	pgConfig   config.PGConfig
+	grpcConfig config.GRPCConfig
 
 	pgPool   *pgxpool.Pool
 	userRepo repository.UserRepository
@@ -29,22 +30,33 @@ func newServiceProvider() *serviceProvider {
 	return &serviceProvider{}
 }
 
-func (sp *serviceProvider) AppConfig() *config.AppConfig {
-	if sp.config == nil {
-		cfg, err := config.InitConfig()
+func (sp *serviceProvider) PGConfig() config.PGConfig {
+	if sp.pgConfig == nil {
+		cfg, err := config.NewDBConfig()
 		if err != nil {
 			log.Fatalf("Error loading config: %s", err.Error())
 		}
 
-		sp.config = cfg
+		sp.pgConfig = cfg
 	}
 
-	return sp.config
+	return sp.pgConfig
+}
+
+func (sp *serviceProvider) GRPCConfig() config.GRPCConfig {
+	if sp.grpcConfig == nil {
+		cfg, err := config.NewGRPCConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %s", err.Error())
+		}
+		sp.grpcConfig = cfg
+	}
+	return sp.grpcConfig
 }
 
 func (sp *serviceProvider) PGPool(ctx context.Context) *pgxpool.Pool {
 	if sp.pgPool == nil {
-		pool, err := pgxpool.New(ctx, sp.AppConfig().DB.URL)
+		pool, err := pgxpool.New(ctx, sp.PGConfig().URL())
 		if err != nil {
 			log.Fatalf("Unable to connect to database: %v\n", err)
 		}

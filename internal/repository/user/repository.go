@@ -88,8 +88,6 @@ func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
 	sql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
 	args = append(args, user.ID)
 
-	fmt.Println(sql)
-	fmt.Println(args)
 	_, err := r.db.Exec(
 		ctx,
 		sql,
