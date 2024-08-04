@@ -5,6 +5,17 @@ import (
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 
-func (s *userService) Update(ctx context.Context, update *model.UserInUpdate) error {
+func (s *userServ) Update(ctx context.Context, user *model.UserInUpdate) error {
+	if len(user.Email) != 0 {
+		err := validateEmail(user.Email)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := s.repo.Update(ctx, user)
+	if err != nil {
+		return err
+	}
 	return nil
 }

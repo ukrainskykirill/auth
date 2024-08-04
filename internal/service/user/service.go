@@ -5,12 +5,12 @@ import (
 	"github.com/ukrainskykirill/auth/internal/service"
 )
 
-type userService struct {
-	userRepo *repository.UserRepository
+type userServ struct {
+	repo repository.UserRepository
 }
 
-func NewService(repo *repository.UserRepository) service.UserService {
-	return &userService{
-		userRepo: repo,
+func newServ(userRepo repository.UserRepository) service.UserService {
+	return &userServ{
+		repo: userRepo,
 	}
 }

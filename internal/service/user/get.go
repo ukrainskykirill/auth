@@ -5,6 +5,10 @@ import (
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 
-func (s *userService) Get(ctx context.Context, userID int64) (*model.User, error) {
-	return &model.User{}, nil
+func (s *userServ) Get(ctx context.Context, userID int64) (*model.User, error) {
+	user, err := s.repo.Get(ctx, userID)
+	if err != nil {
+		return &model.User{}, err
+	}
+	return user, nil
 }

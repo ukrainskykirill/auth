@@ -20,7 +20,7 @@ func NewUserRepository(db *pool.Pool) repository.UserRepository {
 	return &repo{db: db}
 }
 
-func (r *repo) Create(ctx context.Context, user *modelRepo.RepoUserIn) (int64, error) {
+func (r *repo) Create(ctx context.Context, user *model.UserIn) (int64, error) {
 	var userID int64
 	err := r.db.QueryRow(
 		ctx,
@@ -48,20 +48,20 @@ func (r *repo) Delete(ctx context.Context, userID int64) error {
 	return nil
 }
 
-func (r *repo) Update(ctx context.Context, user *modelRepo.RepoUserInUpdate) error {
+func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
 	var sql string
 	var args []interface{}
 	paramIndex := 1
 
 	sql = `UPDATE users SET `
 
-	if user.Name != nil {
+	if len(user.Name) != 0 {
 		sql += fmt.Sprintf("name = $%d", paramIndex)
 		args = append(args, user.Name)
 		paramIndex++
 	}
 
-	if user.Email != nil {
+	if len(user.Email) != 0 {
 		if len(args) > 0 {
 			sql += ", "
 		}
@@ -70,7 +70,7 @@ func (r *repo) Update(ctx context.Context, user *modelRepo.RepoUserInUpdate) err
 		paramIndex++
 	}
 
-	if user.Role != nil {
+	if len(user.Role) != 0 {
 		if len(args) > 0 {
 			sql += ", "
 		}
