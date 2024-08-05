@@ -2,9 +2,11 @@ package app
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ukrainskykirill/auth/internal/api/user"
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
+	"github.com/ukrainskykirill/auth/internal/client/db"
+	"github.com/ukrainskykirill/auth/internal/client/db/pg"
+	"github.com/ukrainskykirill/auth/internal/client/db/transaction"
 	"github.com/ukrainskykirill/auth/internal/closer"
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/repository"
@@ -18,7 +20,9 @@ type serviceProvider struct {
 	pgConfig   config.PGConfig
 	grpcConfig config.GRPCConfig
 
-	pgPool   *pgxpool.Pool
+	dbClient  db.Client
+	txManager db.TxManager
+
 	userRepo repository.UserRepository
 
 	userServ service.UserService
@@ -54,32 +58,32 @@ func (sp *serviceProvider) GRPCConfig() config.GRPCConfig {
 	return sp.grpcConfig
 }
 
-func (sp *serviceProvider) PGPool(ctx context.Context) *pgxpool.Pool {
-	if sp.pgPool == nil {
-		pool, err := pgxpool.New(ctx, sp.PGConfig().URL())
+func (sp *serviceProvider) DBClient(ctx context.Context) db.Client {
+	if sp.dbClient == nil {
+		cl, err := pg.New(ctx, sp.PGConfig().URL())
 		if err != nil {
-			log.Fatalf("Unable to connect to database: %v\n", err)
+			log.Fatalf("failed to create db client: %v", err)
 		}
 
-		err = pool.Ping(ctx)
-		if err != nil {
-			log.Fatalf("ping error: %v\n", err)
-		}
+		closer.Add(cl.Close)
 
-		closer.Add(func() error {
-			pool.Close()
-			return nil
-		})
-
-		sp.pgPool = pool
+		sp.dbClient = cl
 	}
 
-	return sp.pgPool
+	return sp.dbClient
+}
+
+func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
+	if s.txManager == nil {
+		s.txManager = transaction.NewTransactionManager(s.DBClient(ctx).DB())
+	}
+
+	return s.txManager
 }
 
 func (sp *serviceProvider) UserRepo(ctx context.Context) repository.UserRepository {
 	if sp.userRepo == nil {
-		sp.userRepo = userRepo.NewUserRepository(sp.PGPool(ctx))
+		sp.userRepo = userRepo.NewUserRepository(sp.DBClient(ctx))
 	}
 
 	return sp.userRepo
