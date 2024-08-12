@@ -180,12 +180,11 @@ func (r *repo) Get(ctx context.Context, userID int64) (*model.User, error) {
 		QueryRaw: `SELECT name, email, role, created_at, updated_at FROM users WHERE id = $1;`,
 	}
 
-	err := r.db.DB().ScanOneContext(
+	err := r.db.DB().QueryRowContext(
 		ctx,
-		&userRow,
 		q,
 		userID,
-	)
+	).Scan(&userRow.Name, &userRow.Email, &userRow.Role, &userRow.CreatedAt, &userRow.UpdatedAt)
 	if err != nil {
 		return &model.User{}, err
 	}
