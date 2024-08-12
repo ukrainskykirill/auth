@@ -32,17 +32,39 @@ func NewUserRepository(db db.Client) repository.UserRepository {
 func (r *repo) IsExistByID(ctx context.Context, userID int64) (bool, error) {
 	var isExist bool
 
-	sql := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
+	rowSql := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
 
 	q := db.Query{
 		Name:     isExistByID,
-		QueryRaw: sql,
+		QueryRaw: rowSql,
 	}
 
 	err := r.db.DB().QueryRowContext(
 		ctx,
 		q,
 		userID,
+	).Scan(&isExist)
+	if err != nil {
+		return false, err
+	}
+
+	return isExist, nil
+}
+
+func (r *repo) IsExistByName(ctx context.Context, name string) (bool, error) {
+	var isExist bool
+
+	rowSql := `SELECT EXISTS(SELECT 1 FROM users WHERE name = $1);`
+
+	q := db.Query{
+		Name:     isExistByID,
+		QueryRaw: rowSql,
+	}
+
+	err := r.db.DB().QueryRowContext(
+		ctx,
+		q,
+		name,
 	).Scan(&isExist)
 	if err != nil {
 		return false, err
@@ -59,14 +81,15 @@ func (r *repo) Create(ctx context.Context, user *model.UserIn) (int64, error) {
 		QueryRaw: `INSERT INTO users (name, email, role, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
 	}
 
-	_, err := r.db.DB().ExecContext(
+	err := r.db.DB().QueryRowContext(
 		ctx,
 		q,
 		user.Name, user.Email, user.Role, user.Password, time.Now(), time.Now(),
-	)
+	).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}
+
 	fmt.Println(color.BlueString("Create user: name - %+v, with ctx: %v", user, ctx))
 	return userID, nil
 }
@@ -92,48 +115,48 @@ func (r *repo) Delete(ctx context.Context, userID int64) error {
 }
 
 func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
-	var sql string
+	var rowSql string
 	var args []interface{}
 	paramIndex := 1
 
-	sql = `UPDATE users SET `
+	rowSql = `UPDATE users SET `
 
 	if len(user.Name) != 0 {
-		sql += fmt.Sprintf("name = $%d", paramIndex)
+		rowSql += fmt.Sprintf("name = $%d", paramIndex)
 		args = append(args, user.Name)
 		paramIndex++
 	}
 
 	if len(user.Email) != 0 {
 		if len(args) > 0 {
-			sql += ", "
+			rowSql += ", "
 		}
-		sql += fmt.Sprintf("email = $%d", paramIndex)
+		rowSql += fmt.Sprintf("email = $%d", paramIndex)
 		args = append(args, user.Email)
 		paramIndex++
 	}
 
 	if len(user.Role) != 0 {
 		if len(args) > 0 {
-			sql += ", "
+			rowSql += ", "
 		}
-		sql += fmt.Sprintf("role = $%d", paramIndex)
+		rowSql += fmt.Sprintf("role = $%d", paramIndex)
 		args = append(args, user.Role)
 		paramIndex++
 	}
 
 	if len(args) > 0 {
-		sql += ", updated_at = $" + fmt.Sprintf("%d", paramIndex)
+		rowSql += ", updated_at = $" + fmt.Sprintf("%d", paramIndex)
 		args = append(args, time.Now())
 		paramIndex++
 	}
 
-	sql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
+	rowSql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
 	args = append(args, user.ID)
 
 	q := db.Query{
 		Name:     updateRepoFn,
-		QueryRaw: sql,
+		QueryRaw: rowSql,
 	}
 
 	_, err := r.db.DB().ExecContext(

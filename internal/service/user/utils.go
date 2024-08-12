@@ -2,12 +2,13 @@ package user
 
 import (
 	"fmt"
+	prError "github.com/ukrainskykirill/auth/internal/error"
 	"regexp"
 )
 
 func validatePassword(pass, confPass string) error {
 	if pass != confPass {
-		return fmt.Errorf("password does not match")
+		return fmt.Errorf("%w: passwords doesnt match", prError.ErrPassword)
 	}
 	return nil
 }
@@ -18,7 +19,7 @@ func validateEmail(email string) error {
 		return err
 	}
 	if !match {
-		return fmt.Errorf("email does not match")
+		return prError.ErrInvalidEmail
 	}
 	return nil
 }

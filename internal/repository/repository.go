@@ -11,4 +11,5 @@ type UserRepository interface {
 	Update(ctx context.Context, user *model.UserInUpdate) error
 	Delete(ctx context.Context, userID int64) error
 	IsExistByID(ctx context.Context, userID int64) (bool, error)
+	IsExistByName(ctx context.Context, name string) (bool, error)
 }

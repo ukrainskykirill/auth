@@ -2,17 +2,18 @@ package user
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	prError "github.com/ukrainskykirill/auth/internal/error"
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 
 func (s *userServ) Get(ctx context.Context, userID int64) (*model.User, error) {
 	isExist, err := s.repo.IsExistByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return &model.User{}, err
 	}
 	if !isExist {
-		return &model.User{}, errors.New("user not found")
+		return &model.User{}, fmt.Errorf("service.Get - %w", prError.ErrUserNotFound)
 	}
 
 	user, err := s.repo.Get(ctx, userID)
