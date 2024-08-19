@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+
 	"github.com/ukrainskykirill/auth/internal/client/db"
 	"github.com/ukrainskykirill/auth/internal/model"
 	"github.com/ukrainskykirill/auth/internal/repository"
@@ -33,11 +34,11 @@ func NewUserRepository(db db.Client) repository.UserRepository {
 func (r *repo) IsExistByID(ctx context.Context, userID int64) (bool, error) {
 	var isExist bool
 
-	rowSql := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
+	rowSQL := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
 
 	q := db.Query{
 		Name:     isExistByID,
-		QueryRaw: rowSql,
+		QueryRaw: rowSQL,
 	}
 
 	err := r.db.DB().QueryRowContext(
@@ -55,11 +56,11 @@ func (r *repo) IsExistByID(ctx context.Context, userID int64) (bool, error) {
 func (r *repo) IsExistByName(ctx context.Context, name string) (bool, error) {
 	var isExist bool
 
-	rowSql := `SELECT EXISTS(SELECT 1 FROM users WHERE name = $1);`
+	rowSQL := `SELECT EXISTS(SELECT 1 FROM users WHERE name = $1);`
 
 	q := db.Query{
 		Name:     isExistByID,
-		QueryRaw: rowSql,
+		QueryRaw: rowSQL,
 	}
 
 	err := r.db.DB().QueryRowContext(
@@ -116,48 +117,48 @@ func (r *repo) Delete(ctx context.Context, userID int64) error {
 }
 
 func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
-	var rowSql string
+	var rowSQL string
 	var args []interface{}
 	paramIndex := 1
 
-	rowSql = `UPDATE users SET `
+	rowSQL = `UPDATE users SET `
 
 	if len(user.Name) != 0 {
-		rowSql += fmt.Sprintf("name = $%d", paramIndex)
+		rowSQL += fmt.Sprintf("name = $%d", paramIndex)
 		args = append(args, user.Name)
 		paramIndex++
 	}
 
 	if len(user.Email) != 0 {
 		if len(args) > 0 {
-			rowSql += ", "
+			rowSQL += ", "
 		}
-		rowSql += fmt.Sprintf("email = $%d", paramIndex)
+		rowSQL += fmt.Sprintf("email = $%d", paramIndex)
 		args = append(args, user.Email)
 		paramIndex++
 	}
 
 	if len(user.Role) != 0 {
 		if len(args) > 0 {
-			rowSql += ", "
+			rowSQL += ", "
 		}
-		rowSql += fmt.Sprintf("role = $%d", paramIndex)
+		rowSQL += fmt.Sprintf("role = $%d", paramIndex)
 		args = append(args, user.Role)
 		paramIndex++
 	}
 
 	if len(args) > 0 {
-		rowSql += ", updated_at = $" + fmt.Sprintf("%d", paramIndex)
+		rowSQL += ", updated_at = $" + fmt.Sprintf("%d", paramIndex)
 		args = append(args, time.Now())
 		paramIndex++
 	}
 
-	rowSql += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
+	rowSQL += " WHERE id = $" + fmt.Sprintf("%d;", paramIndex)
 	args = append(args, user.ID)
 
 	q := db.Query{
 		Name:     updateRepoFn,
-		QueryRaw: rowSql,
+		QueryRaw: rowSQL,
 	}
 
 	_, err := r.db.DB().ExecContext(

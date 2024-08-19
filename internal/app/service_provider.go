@@ -28,7 +28,7 @@ type serviceProvider struct {
 
 	userServ service.UserService
 
-	userApi *user.Implementation
+	userAPI *user.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -74,12 +74,12 @@ func (sp *serviceProvider) DBClient(ctx context.Context) db.Client {
 	return sp.dbClient
 }
 
-func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
-	if s.txManager == nil {
-		s.txManager = transaction.NewTransactionManager(s.DBClient(ctx).DB())
+func (sp *serviceProvider) TxManager(ctx context.Context) db.TxManager {
+	if sp.txManager == nil {
+		sp.txManager = transaction.NewTransactionManager(sp.DBClient(ctx).DB())
 	}
 
-	return s.txManager
+	return sp.txManager
 }
 
 func (sp *serviceProvider) UserRepo(ctx context.Context) repository.UserRepository {
@@ -99,9 +99,9 @@ func (sp *serviceProvider) UserService(ctx context.Context) service.UserService 
 }
 
 func (sp *serviceProvider) UserAPI(ctx context.Context) *user.Implementation {
-	if sp.userApi == nil {
-		sp.userApi = userApi.NewImplementation(sp.UserService(ctx))
+	if sp.userAPI == nil {
+		sp.userAPI = userApi.NewImplementation(sp.UserService(ctx))
 	}
 
-	return sp.userApi
+	return sp.userAPI
 }
