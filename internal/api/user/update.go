@@ -2,13 +2,15 @@ package user
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
-	"github.com/ukrainskykirill/auth/internal/converter"
-	prError "github.com/ukrainskykirill/auth/internal/error"
-	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/ukrainskykirill/auth/internal/converter"
+	prError "github.com/ukrainskykirill/auth/internal/error"
+	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 )
 
 func (i *Implementation) Update(ctx context.Context, req *guser.UpdateRequest) (*emptypb.Empty, error) {

@@ -1,9 +1,10 @@
 package converter
 
 import (
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/ukrainskykirill/auth/internal/model"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func getRole(role string) guser.UserRole {

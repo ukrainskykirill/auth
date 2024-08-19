@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 

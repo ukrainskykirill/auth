@@ -3,13 +3,14 @@ package user
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/ukrainskykirill/auth/internal/client/db"
 	"github.com/ukrainskykirill/auth/internal/model"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	"github.com/ukrainskykirill/auth/internal/repository/user/converter"
 	modelRepo "github.com/ukrainskykirill/auth/internal/repository/user/model"
-	"time"
 )
 
 const (

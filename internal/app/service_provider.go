@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"log"
+
 	"github.com/ukrainskykirill/auth/internal/api/user"
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
 	"github.com/ukrainskykirill/auth/internal/client/db"
@@ -13,7 +15,6 @@ import (
 	userRepo "github.com/ukrainskykirill/auth/internal/repository/user"
 	"github.com/ukrainskykirill/auth/internal/service"
 	userServ "github.com/ukrainskykirill/auth/internal/service/user"
-	"log"
 )
 
 type serviceProvider struct {

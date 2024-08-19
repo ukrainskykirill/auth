@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+
 	prError "github.com/ukrainskykirill/auth/internal/error"
 )
 

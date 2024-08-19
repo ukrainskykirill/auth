@@ -2,8 +2,9 @@ package user
 
 import (
 	"fmt"
-	prError "github.com/ukrainskykirill/auth/internal/error"
 	"regexp"
+
+	prError "github.com/ukrainskykirill/auth/internal/error"
 )
 
 func validatePassword(pass, confPass string) error {

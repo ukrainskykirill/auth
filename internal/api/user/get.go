@@ -3,11 +3,13 @@ package user
 import (
 	"context"
 	"errors"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/ukrainskykirill/auth/internal/converter"
 	prError "github.com/ukrainskykirill/auth/internal/error"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (i *Implementation) Get(ctx context.Context, req *guser.GetRequest) (*guser.GetResponse, error) {

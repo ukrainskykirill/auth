@@ -3,15 +3,17 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+
 	"github.com/fatih/color"
-	"github.com/ukrainskykirill/auth/internal/closer"
-	"github.com/ukrainskykirill/auth/internal/config"
-	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-	"log"
-	"net"
+
+	"github.com/ukrainskykirill/auth/internal/closer"
+	"github.com/ukrainskykirill/auth/internal/config"
+	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 )
 
 type App struct {

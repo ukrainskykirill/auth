@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/ukrainskykirill/auth/internal/app"
 	"log"
+
+	"github.com/ukrainskykirill/auth/internal/app"
 )
 
 func main() {
