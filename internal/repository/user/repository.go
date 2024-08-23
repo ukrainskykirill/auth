@@ -2,12 +2,15 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/ukrainskykirill/auth/internal/client/db"
+	prError "github.com/ukrainskykirill/auth/internal/error"
 	"github.com/ukrainskykirill/auth/internal/model"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	"github.com/ukrainskykirill/auth/internal/repository/user/converter"
@@ -20,7 +23,6 @@ const (
 	deleteRepoFn = userRepo + "." + "Delete"
 	updateRepoFn = userRepo + "." + "Update"
 	getRepoFn    = userRepo + "." + "Get"
-	isExistByID  = userRepo + "." + "IsExistByID"
 )
 
 type repo struct {
@@ -29,50 +31,6 @@ type repo struct {
 
 func NewUserRepository(db db.Client) repository.UserRepository {
 	return &repo{db: db}
-}
-
-func (r *repo) IsExistByID(ctx context.Context, userID int64) (bool, error) {
-	var isExist bool
-
-	rowSQL := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
-
-	q := db.Query{
-		Name:     isExistByID,
-		QueryRaw: rowSQL,
-	}
-
-	err := r.db.DB().QueryRowContext(
-		ctx,
-		q,
-		userID,
-	).Scan(&isExist)
-	if err != nil {
-		return false, err
-	}
-
-	return isExist, nil
-}
-
-func (r *repo) IsExistByName(ctx context.Context, name string) (bool, error) {
-	var isExist bool
-
-	rowSQL := `SELECT EXISTS(SELECT 1 FROM users WHERE name = $1);`
-
-	q := db.Query{
-		Name:     isExistByID,
-		QueryRaw: rowSQL,
-	}
-
-	err := r.db.DB().QueryRowContext(
-		ctx,
-		q,
-		name,
-	).Scan(&isExist)
-	if err != nil {
-		return false, err
-	}
-
-	return isExist, nil
 }
 
 func (r *repo) Create(ctx context.Context, user *model.UserIn) (int64, error) {
@@ -89,7 +47,7 @@ func (r *repo) Create(ctx context.Context, user *model.UserIn) (int64, error) {
 		user.Name, user.Email, user.Role, user.Password, time.Now(), time.Now(),
 	).Scan(&userID)
 	if err != nil {
-		return 0, err
+		return 0, prError.ErrNameNotUnique
 	}
 
 	fmt.Println(color.BlueString("Create user: name - %+v, with ctx: %v", user, ctx))
@@ -103,13 +61,17 @@ func (r *repo) Delete(ctx context.Context, userID int64) error {
 		QueryRaw: `DELETE FROM users WHERE id = $1;`,
 	}
 
-	_, err := r.db.DB().ExecContext(
+	tag, err := r.db.DB().ExecContext(
 		ctx,
 		q,
 		userID,
 	)
 	if err != nil {
 		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return prError.ErrUserNotFound
 	}
 
 	fmt.Println(color.RedString("Delete user: id %d, with ctx: %v", userID, ctx))
@@ -161,13 +123,16 @@ func (r *repo) Update(ctx context.Context, user *model.UserInUpdate) error {
 		QueryRaw: rowSQL,
 	}
 
-	_, err := r.db.DB().ExecContext(
+	tag, err := r.db.DB().ExecContext(
 		ctx,
 		q,
 		args...,
 	)
 	if err != nil {
 		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return prError.ErrUserNotFound
 	}
 
 	fmt.Println(color.WhiteString("Update user: id %+v, with ctx: %v", user, ctx))
@@ -188,6 +153,9 @@ func (r *repo) Get(ctx context.Context, userID int64) (*model.User, error) {
 		userID,
 	).Scan(&userRow.Name, &userRow.Email, &userRow.Role, &userRow.CreatedAt, &userRow.UpdatedAt)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &model.User{}, prError.ErrUserNotFound
+		}
 		return &model.User{}, err
 	}
 

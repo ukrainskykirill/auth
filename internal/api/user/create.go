@@ -22,8 +22,6 @@ func (i *Implementation) Create(ctx context.Context, req *guser.CreateRequest) (
 			return nil, status.Error(codes.NotFound, err.Error())
 		case errors.Is(err, prError.ErrPassword):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
-		case errors.Is(err, prError.ErrNameNotUnique):
-			return nil, status.Error(codes.AlreadyExists, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, err.Error())
 		}

@@ -19,8 +19,6 @@ func (i *Implementation) Update(ctx context.Context, req *guser.UpdateRequest) (
 		switch {
 		case errors.Is(err, prError.ErrUserNotFound):
 			return nil, status.Error(codes.NotFound, err.Error())
-		case errors.Is(err, prError.ErrNameNotUnique):
-			return nil, status.Error(codes.AlreadyExists, err.Error())
 		case errors.Is(err, prError.ErrInvalidEmail):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
