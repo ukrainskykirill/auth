@@ -4,12 +4,13 @@ import (
 	"context"
 	"log"
 
+	"github.com/ukrainskykirill/platform_common/pkg/db"
+	"github.com/ukrainskykirill/platform_common/pkg/db/pg"
+	"github.com/ukrainskykirill/platform_common/pkg/db/transaction"
+	"github.com/ukrainskykirill/platform_common/pkg/closer"
+
 	"github.com/ukrainskykirill/auth/internal/api/user"
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
-	"github.com/ukrainskykirill/auth/internal/client/db"
-	"github.com/ukrainskykirill/auth/internal/client/db/pg"
-	"github.com/ukrainskykirill/auth/internal/client/db/transaction"
-	"github.com/ukrainskykirill/auth/internal/closer"
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	userRepo "github.com/ukrainskykirill/auth/internal/repository/user"

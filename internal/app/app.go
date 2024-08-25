@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+	"github.com/ukrainskykirill/platform_common/pkg/closer"
 
-	"github.com/ukrainskykirill/auth/internal/closer"
 	"github.com/ukrainskykirill/auth/internal/config"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 )
