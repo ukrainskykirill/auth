@@ -44,8 +44,8 @@ func TestGet(t *testing.T) {
 			Name:      name,
 			Email:     email,
 			Role:      role.String(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 		}
 	)
 	defer t.Cleanup(mc.Finish)
@@ -64,7 +64,7 @@ func TestGet(t *testing.T) {
 				ctx: ctx,
 				req: userID,
 			},
-			want: &model.User{},
+			want: UserIn,
 			err:  nil,
 			userRepoMock: func(mc *minimock.Controller) repository.UserRepository {
 				mock := repoMocks.NewUserRepositoryMock(mc)
@@ -73,7 +73,7 @@ func TestGet(t *testing.T) {
 			},
 			userCache: func(mc *minimock.Controller) cache.UserCache {
 				mock := cacheMocks.NewUserCacheMock(mc)
-				mock.GetMock.Expect(ctx, userID).Return(&model.User{}, nil)
+				mock.GetMock.Expect(ctx, userID).Return(nil, nil)
 				mock.CreateMock.Expect(ctx, UserIn).Return(nil)
 				return mock
 			},
@@ -93,7 +93,7 @@ func TestGet(t *testing.T) {
 			},
 			userCache: func(mc *minimock.Controller) cache.UserCache {
 				mock := cacheMocks.NewUserCacheMock(mc)
-				mock.GetMock.Expect(ctx, userID).Return(&model.User{}, nil)
+				mock.GetMock.Expect(ctx, userID).Return(nil, nil)
 				return mock
 			},
 		},
@@ -129,7 +129,7 @@ func TestGet(t *testing.T) {
 			},
 			userCache: func(mc *minimock.Controller) cache.UserCache {
 				mock := cacheMocks.NewUserCacheMock(mc)
-				mock.GetMock.Expect(ctx, userID).Return(&model.User{}, cacheErr)
+				mock.GetMock.Expect(ctx, userID).Return(nil, cacheErr)
 				return mock
 			},
 		},

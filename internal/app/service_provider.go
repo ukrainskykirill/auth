@@ -108,16 +108,13 @@ func (sp *serviceProvider) RedisConfig() config.RedisConfig {
 }
 
 func (sp *serviceProvider) RedisPool(ctx context.Context) *redigo.Pool {
-	if sp.RedisPool == nil {
-		sp.redisPool = redigo.Pool{
-			MaxIdle:     sp.RedisConfig().MaxIdle(),
-			IdleTimeout: sp.RedisConfig().IdleTimeout(),
-			DialContext: func(ctx context.Context) (redigo.Conn, error) {
-				return redigo.DialContext(ctx, "tcp", sp.RedisConfig().Address())
-			},
-		}
+	sp.redisPool = redigo.Pool{
+		MaxIdle:     sp.RedisConfig().MaxIdle(),
+		IdleTimeout: sp.RedisConfig().IdleTimeout(),
+		DialContext: func(ctx context.Context) (redigo.Conn, error) {
+			return redigo.DialContext(ctx, "tcp", sp.RedisConfig().Address())
+		},
 	}
-
 	return &sp.redisPool
 }
 

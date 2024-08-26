@@ -12,7 +12,7 @@ func (s *userServ) Get(ctx context.Context, userID int64) (*model.User, error) {
 		return &model.User{}, err
 	}
 
-	if user != nil && *user == (model.User{}) {
+	if user == nil {
 		user, err := s.repo.Get(ctx, userID)
 		if err != nil {
 			return &model.User{}, err
@@ -22,6 +22,7 @@ func (s *userServ) Get(ctx context.Context, userID int64) (*model.User, error) {
 		if err != nil {
 			return &model.User{}, err
 		}
+		return user, nil
 	}
 	return user, nil
 }

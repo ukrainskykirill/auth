@@ -23,7 +23,7 @@ func ToUserFromCache(user *modelCache.User) *model.User {
 		Name:      user.Name,
 		Email:     user.Email,
 		Role:      user.Role,
-		CreatedAt: time.Unix(0, user.CreatedAtNs),
-		UpdatedAt: time.Unix(0, user.CreatedAtNs),
+		CreatedAt: time.Unix(user.CreatedAtNs, 0),
+		UpdatedAt: time.Unix(user.UpdatedAtNs, 0),
 	}
 }

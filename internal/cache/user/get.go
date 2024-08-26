@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	redigo "github.com/gomodule/redigo/redis"
@@ -20,7 +19,7 @@ func (c *Implementation) Get(ctx context.Context, id int64) (*model.User, error)
 	}
 
 	if len(values) == 0 {
-		return nil, errors.New("user not found")
+		return nil, nil
 	}
 
 	var user cacheModel.User
