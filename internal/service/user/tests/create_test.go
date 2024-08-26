@@ -9,6 +9,8 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ukrainskykirill/auth/internal/cache"
+	cacheMocks "github.com/ukrainskykirill/auth/internal/cache/mocks"
 	prError "github.com/ukrainskykirill/auth/internal/error"
 	"github.com/ukrainskykirill/auth/internal/model"
 	"github.com/ukrainskykirill/auth/internal/repository"
@@ -20,6 +22,7 @@ import (
 func TestCreate(t *testing.T) {
 	t.Parallel()
 	type userRepoMockFunc func(mc *minimock.Controller) repository.UserRepository
+	type userCacheMockFunc func(mc *minimock.Controller) cache.UserCache
 
 	type args struct {
 		ctx context.Context
@@ -69,6 +72,7 @@ func TestCreate(t *testing.T) {
 		want         int64
 		err          error
 		userRepoMock userRepoMockFunc
+		userCache    userCacheMockFunc
 	}{
 		{
 			name: "success case",
@@ -81,6 +85,10 @@ func TestCreate(t *testing.T) {
 			userRepoMock: func(mc *minimock.Controller) repository.UserRepository {
 				mock := repoMocks.NewUserRepositoryMock(mc)
 				mock.CreateMock.Expect(ctx, UserIn).Return(userID, nil)
+				return mock
+			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
 				return mock
 			},
 		},
@@ -97,6 +105,10 @@ func TestCreate(t *testing.T) {
 				mock.CreateMock.Expect(ctx, UserIn).Return(0, repoErr)
 				return mock
 			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
+				return mock
+			},
 		},
 		{
 			name: "invalid email error",
@@ -108,6 +120,10 @@ func TestCreate(t *testing.T) {
 			err:  invalidEmailErr,
 			userRepoMock: func(mc *minimock.Controller) repository.UserRepository {
 				mock := repoMocks.NewUserRepositoryMock(mc)
+				return mock
+			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
 				return mock
 			},
 		},
@@ -123,6 +139,10 @@ func TestCreate(t *testing.T) {
 				mock := repoMocks.NewUserRepositoryMock(mc)
 				return mock
 			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
+				return mock
+			},
 		},
 	}
 
@@ -132,9 +152,10 @@ func TestCreate(t *testing.T) {
 			t.Parallel()
 
 			usersRepo := tt.userRepoMock(mc)
+			cacheUser := tt.userCache(mc)
 
 			service := user.NewServ(
-				usersRepo,
+				usersRepo, cacheUser,
 			)
 
 			id, err := service.Create(tt.args.ctx, tt.args.req)

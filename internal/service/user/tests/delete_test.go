@@ -9,6 +9,8 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ukrainskykirill/auth/internal/cache"
+	cacheMocks "github.com/ukrainskykirill/auth/internal/cache/mocks"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	repoMocks "github.com/ukrainskykirill/auth/internal/repository/mocks"
 	"github.com/ukrainskykirill/auth/internal/service/user"
@@ -17,6 +19,7 @@ import (
 func TestDelete(t *testing.T) {
 	t.Parallel()
 	type userRepoMockFunc func(mc *minimock.Controller) repository.UserRepository
+	type userCacheMockFunc func(mc *minimock.Controller) cache.UserCache
 
 	type args struct {
 		ctx context.Context
@@ -39,6 +42,7 @@ func TestDelete(t *testing.T) {
 		args         args
 		err          error
 		userRepoMock userRepoMockFunc
+		userCache    userCacheMockFunc
 	}{
 		{
 			name: "success case",
@@ -49,6 +53,11 @@ func TestDelete(t *testing.T) {
 			err: nil,
 			userRepoMock: func(mc *minimock.Controller) repository.UserRepository {
 				mock := repoMocks.NewUserRepositoryMock(mc)
+				mock.DeleteMock.Expect(ctx, userID).Return(nil)
+				return mock
+			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
 				mock.DeleteMock.Expect(ctx, userID).Return(nil)
 				return mock
 			},
@@ -65,6 +74,10 @@ func TestDelete(t *testing.T) {
 				mock.DeleteMock.Expect(ctx, userID).Return(repoErr)
 				return mock
 			},
+			userCache: func(mc *minimock.Controller) cache.UserCache {
+				mock := cacheMocks.NewUserCacheMock(mc)
+				return mock
+			},
 		},
 	}
 
@@ -74,9 +87,10 @@ func TestDelete(t *testing.T) {
 			t.Parallel()
 
 			usersRepo := tt.userRepoMock(mc)
+			cacheUser := tt.userCache(mc)
 
 			service := user.NewServ(
-				usersRepo,
+				usersRepo, cacheUser,
 			)
 
 			err := service.Delete(tt.args.ctx, tt.args.req)
