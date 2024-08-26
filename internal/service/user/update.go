@@ -19,5 +19,11 @@ func (s *userServ) Update(ctx context.Context, user *model.UserInUpdate) error {
 	if err != nil {
 		return err
 	}
+
+	err = s.cache.Delete(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

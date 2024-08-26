@@ -10,5 +10,10 @@ func (s *userServ) Delete(ctx context.Context, userID int64) error {
 	if err != nil {
 		return fmt.Errorf("service.Delete - %w", err)
 	}
+
+	err = s.cache.Delete(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("service.Delete - %w", err)
+	}
 	return nil
 }
