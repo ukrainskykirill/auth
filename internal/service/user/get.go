@@ -7,9 +7,22 @@ import (
 )
 
 func (s *userServ) Get(ctx context.Context, userID int64) (*model.User, error) {
-	user, err := s.repo.Get(ctx, userID)
+	user, err := s.cache.Get(ctx, userID)
 	if err != nil {
 		return &model.User{}, err
+	}
+
+	if user == nil {
+		user, err := s.repo.Get(ctx, userID)
+		if err != nil {
+			return &model.User{}, err
+		}
+
+		err = s.cache.Create(ctx, user)
+		if err != nil {
+			return &model.User{}, err
+		}
+		return user, nil
 	}
 	return user, nil
 }

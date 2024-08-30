@@ -10,6 +10,11 @@ services:
     ports:
       - "${DB_PORT}:5432"
 
+  redis:
+    image: redis:7.2.5-alpine3.20
+    ports:
+      - "6379:6379"
+
   migrator:
     build:
       context: .

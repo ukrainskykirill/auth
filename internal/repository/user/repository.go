@@ -8,8 +8,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jackc/pgx/v4"
+	"github.com/ukrainskykirill/platform_common/pkg/db"
 
-	"github.com/ukrainskykirill/auth/internal/client/db"
 	prError "github.com/ukrainskykirill/auth/internal/error"
 	"github.com/ukrainskykirill/auth/internal/model"
 	"github.com/ukrainskykirill/auth/internal/repository"

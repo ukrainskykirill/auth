@@ -4,12 +4,18 @@ import (
 	"context"
 	"log"
 
+	redigo "github.com/gomodule/redigo/redis"
+	"github.com/ukrainskykirill/platform_common/pkg/cache"
+	"github.com/ukrainskykirill/platform_common/pkg/cache/redis"
+	"github.com/ukrainskykirill/platform_common/pkg/closer"
+	"github.com/ukrainskykirill/platform_common/pkg/db"
+	"github.com/ukrainskykirill/platform_common/pkg/db/pg"
+	"github.com/ukrainskykirill/platform_common/pkg/db/transaction"
+
 	"github.com/ukrainskykirill/auth/internal/api/user"
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
-	"github.com/ukrainskykirill/auth/internal/client/db"
-	"github.com/ukrainskykirill/auth/internal/client/db/pg"
-	"github.com/ukrainskykirill/auth/internal/client/db/transaction"
-	"github.com/ukrainskykirill/auth/internal/closer"
+	prCache "github.com/ukrainskykirill/auth/internal/cache"
+	userCache "github.com/ukrainskykirill/auth/internal/cache/user"
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	userRepo "github.com/ukrainskykirill/auth/internal/repository/user"
@@ -18,11 +24,17 @@ import (
 )
 
 type serviceProvider struct {
-	pgConfig   config.PGConfig
-	grpcConfig config.GRPCConfig
+	pgConfig    config.PGConfig
+	grpcConfig  config.GRPCConfig
+	redisConfig config.RedisConfig
+
+	redisPool   redigo.Pool
+	redisClient cache.Client
 
 	dbClient  db.Client
 	txManager db.TxManager
+
+	userCache prCache.UserCache
 
 	userRepo repository.UserRepository
 
@@ -82,6 +94,44 @@ func (sp *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return sp.txManager
 }
 
+func (sp *serviceProvider) RedisConfig() config.RedisConfig {
+	if sp.redisConfig == nil {
+		cfg, err := config.NewRedisConfig()
+		if err != nil {
+			log.Fatalf("failed to get redis config: %s", err.Error())
+		}
+
+		sp.redisConfig = cfg
+	}
+
+	return sp.redisConfig
+}
+
+func (sp *serviceProvider) RedisPool(ctx context.Context) *redigo.Pool {
+	sp.redisPool = redigo.Pool{
+		MaxIdle:     sp.RedisConfig().MaxIdle(),
+		IdleTimeout: sp.RedisConfig().IdleTimeout(),
+		DialContext: func(ctx context.Context) (redigo.Conn, error) {
+			return redigo.DialContext(ctx, "tcp", sp.RedisConfig().Address())
+		},
+	}
+	return &sp.redisPool
+}
+
+func (sp *serviceProvider) RedisClient(ctx context.Context) cache.Client {
+	if sp.redisClient == nil {
+		sp.redisClient = redis.NewClient(sp.RedisPool(ctx), sp.RedisConfig().ConnectionTimeout())
+	}
+	return sp.redisClient
+}
+
+func (sp *serviceProvider) UserCache(ctx context.Context) prCache.UserCache {
+	if sp.userCache == nil {
+		sp.userCache = userCache.NewCache(sp.RedisClient(ctx))
+	}
+	return sp.userCache
+}
+
 func (sp *serviceProvider) UserRepo(ctx context.Context) repository.UserRepository {
 	if sp.userRepo == nil {
 		sp.userRepo = userRepo.NewUserRepository(sp.DBClient(ctx))
@@ -92,7 +142,7 @@ func (sp *serviceProvider) UserRepo(ctx context.Context) repository.UserReposito
 
 func (sp *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if sp.userServ == nil {
-		sp.userServ = userServ.NewServ(sp.UserRepo(ctx))
+		sp.userServ = userServ.NewServ(sp.UserRepo(ctx), sp.UserCache(ctx))
 	}
 
 	return sp.userServ
