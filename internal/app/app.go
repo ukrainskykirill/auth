@@ -7,12 +7,13 @@ import (
 	"net"
 
 	"github.com/fatih/color"
+	"github.com/ukrainskykirill/platform_common/pkg/closer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-	"github.com/ukrainskykirill/platform_common/pkg/closer"
 
 	"github.com/ukrainskykirill/auth/internal/config"
+	"github.com/ukrainskykirill/auth/internal/interceptor"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 )
 
@@ -73,7 +74,10 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
+	)
 
 	reflection.Register(a.grpcServer)
 
