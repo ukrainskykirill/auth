@@ -20,7 +20,7 @@ func (s *userCreateService) UserCreateHandler(ctx context.Context, msg *amqp.Del
 
 	userID, err := s.repo.Create(ctx, userIn)
 	if err != nil {
-		fmt.Println("repo error: %s", err)
+		fmt.Printf("repo error: %s", err)
 		return err
 	}
 
