@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	redigo "github.com/gomodule/redigo/redis"
@@ -16,17 +17,22 @@ import (
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
 	prCache "github.com/ukrainskykirill/auth/internal/cache"
 	userCache "github.com/ukrainskykirill/auth/internal/cache/user"
+	"github.com/ukrainskykirill/auth/internal/client/rabbitmq"
+	rabbitmqConsumer "github.com/ukrainskykirill/auth/internal/client/rabbitmq/consumer"
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/repository"
 	userRepo "github.com/ukrainskykirill/auth/internal/repository/user"
 	"github.com/ukrainskykirill/auth/internal/service"
+	consumerService "github.com/ukrainskykirill/auth/internal/service/consumer"
+	userConsumer "github.com/ukrainskykirill/auth/internal/service/consumer/user"
 	userServ "github.com/ukrainskykirill/auth/internal/service/user"
 )
 
 type serviceProvider struct {
-	pgConfig    config.PGConfig
-	grpcConfig  config.GRPCConfig
-	redisConfig config.RedisConfig
+	pgConfig               config.PGConfig
+	grpcConfig             config.GRPCConfig
+	redisConfig            config.RedisConfig
+	rabbitmqConsumerConfig config.RabbitMQConsumerConfig
 
 	redisPool   redigo.Pool
 	redisClient cache.Client
@@ -34,11 +40,15 @@ type serviceProvider struct {
 	dbClient  db.Client
 	txManager db.TxManager
 
+	rabbitMQConsumer rabbitmq.IConsumer
+
 	userCache prCache.UserCache
 
 	userRepo repository.UserRepository
 
 	userServ service.UserService
+
+	userCreateConsumer consumerService.ConsumerService
 
 	userAPI *user.Implementation
 }
@@ -69,6 +79,17 @@ func (sp *serviceProvider) GRPCConfig() config.GRPCConfig {
 		sp.grpcConfig = cfg
 	}
 	return sp.grpcConfig
+}
+
+func (sp *serviceProvider) RabbitMQConsumerConfig() config.RabbitMQConsumerConfig {
+	if sp.rabbitmqConsumerConfig == nil {
+		cfg, err := config.NewRabbitMQConsumerConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %s", err.Error())
+		}
+		sp.rabbitmqConsumerConfig = cfg
+	}
+	return sp.rabbitmqConsumerConfig
 }
 
 func (sp *serviceProvider) DBClient(ctx context.Context) db.Client {
@@ -154,4 +175,31 @@ func (sp *serviceProvider) UserAPI(ctx context.Context) *user.Implementation {
 	}
 
 	return sp.userAPI
+}
+
+func (sp *serviceProvider) RabbitMQConsumer() rabbitmq.IConsumer {
+	if sp.rabbitMQConsumer == nil {
+		var err error
+		sp.rabbitMQConsumer, err = rabbitmqConsumer.NewConsumer(
+			sp.RabbitMQConsumerConfig().URL(),
+			sp.RabbitMQConsumerConfig().Queue(),
+			sp.RabbitMQConsumerConfig().MaxRetryCount(),
+		)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	return sp.rabbitMQConsumer
+}
+
+func (sp *serviceProvider) UserCreateConsumer(ctx context.Context) consumerService.ConsumerService {
+	if sp.userCreateConsumer == nil {
+		sp.userCreateConsumer = userConsumer.NewUserCreateService(
+			sp.UserRepo(ctx),
+			sp.RabbitMQConsumer(),
+		)
+	}
+
+	return sp.userCreateConsumer
 }

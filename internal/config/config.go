@@ -9,6 +9,7 @@ import (
 
 var (
 	errVariableNotFound = errors.New("environment variable not found")
+	errVariableParse    = errors.New("parsing variable")
 )
 
 func LoadConfig() error {
