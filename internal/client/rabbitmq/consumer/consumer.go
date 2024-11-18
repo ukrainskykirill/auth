@@ -49,9 +49,6 @@ func NewConsumer(url, queue string, maxRetryCount int) (*Consumer, error) {
 
 func (c *Consumer) Consume(ctx context.Context, handler MsgHandler) error {
 	c.handler = handler
-	if c.handler == nil {
-		return fmt.Errorf("Message handler is nil")
-	}
 
 	deliveries, err := c.channel.Consume(
 		c.queue,
@@ -112,7 +109,7 @@ func (c *Consumer) msgRetry(msg amqp.Delivery) {
 					msg.Nack(false, false)
 				} else {
 					msg.Ack(false)
-					fmt.Println("maximum retries has been exceeded: %v", msg.MessageId)
+					fmt.Printf("maximum retries has been exceeded: %s", msg.MessageId)
 				}
 				break
 			}
