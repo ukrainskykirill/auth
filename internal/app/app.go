@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/ukrainskykirill/platform_common/pkg/closer"
@@ -33,13 +37,59 @@ func NewApp(ctx context.Context) (*App, error) {
 	return a, nil
 }
 
-func (a *App) Run(_ context.Context) error {
+func (a *App) Run(ctx context.Context) error {
 	defer func() {
 		closer.CloseAll()
 		closer.Wait()
 	}()
 
-	return a.runGRPCServer()
+	ctx, cancel := context.WithCancel(ctx)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		err := a.runGRPCServer()
+		if err != nil {
+			fmt.Printf("run grpc service: %s", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		err := a.serviceProvider.UserCreateConsumer(ctx).RunConsumer(ctx)
+		if err != nil {
+			fmt.Printf("run user create consumer: %s", err)
+		}
+
+	}()
+
+	gracefulShutdown(ctx, cancel, wg)
+
+	return nil
+}
+
+func gracefulShutdown(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	select {
+	case <-ctx.Done():
+		log.Println("terminating: context cancelled")
+	case <-waitSignal():
+		log.Println("terminating: via signal")
+	}
+
+	cancel()
+	if wg != nil {
+		wg.Wait()
+	}
+}
+
+func waitSignal() chan os.Signal {
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
+	return sigterm
 }
 
 func (a *App) initDeps(ctx context.Context) error {

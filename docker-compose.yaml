@@ -15,10 +15,18 @@ services:
     ports:
       - "6379:6379"
 
-  migrator:
-    build:
-      context: .
-      dockerfile: migration.Dockerfile
-    restart: on-failure
-    environment:
-      DB_HOST: pg
+  # migrator:
+  #   build:
+  #     context: .
+  #     dockerfile: migration.Dockerfile
+  #   restart: on-failure
+  #   environment:
+  #     DB_HOST: pg
+
+  rabbitmq:
+    image: rabbitmq:4.0.3-management
+    hostname: rabbitmq
+    restart: always
+    ports:
+      - 15672:15672
+      - 5672:5672
