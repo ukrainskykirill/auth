@@ -3,6 +3,7 @@ package user_create
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -19,6 +20,7 @@ func (s *userCreateService) UserCreateHandler(ctx context.Context, msg *amqp.Del
 
 	userID, err := s.repo.Create(ctx, userIn)
 	if err != nil {
+		fmt.Println("repo error: %s", err)
 		return err
 	}
 

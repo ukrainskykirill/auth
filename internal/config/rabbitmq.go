@@ -3,27 +3,31 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 const (
-	rabbitMQHostEnv  = "RABBITMQ_HOST"
-	rabbitMQPortEnv  = "RABBITMQ_PORT"
-	rabbitMQUserEnv  = "RABBITMQ_USER"
-	rabbitMQPassEnv  = "RABBITMQ_PASS"
-	rabbitMQQueueEnv = "RABBITMQ_QUEUE"
+	rabbitMQHostEnv           = "RABBITMQ_HOST"
+	rabbitMQPortEnv           = "RABBITMQ_PORT"
+	rabbitMQUserEnv           = "RABBITMQ_USER"
+	rabbitMQPassEnv           = "RABBITMQ_PASS"
+	rabbitMQQueueEnv          = "RABBITMQ_QUEUE"
+	rabbitMQQMaxRetryCountEnv = "RABBITMQ_MAX_RETRY_COUNT"
 )
 
 type RabbitMQConsumerConfig interface {
 	URL() string
 	Queue() string
+	MaxRetryCount() int
 }
 
 type rabbitMQConsumerConfig struct {
-	host     string
-	port     string
-	username string
-	password string
-	queue    string
+	host          string
+	port          string
+	username      string
+	password      string
+	queue         string
+	maxRetryCount int
 }
 
 func NewRabbitMQConsumerConfig() (RabbitMQConsumerConfig, error) {
@@ -52,12 +56,23 @@ func NewRabbitMQConsumerConfig() (RabbitMQConsumerConfig, error) {
 		return &rabbitMQConsumerConfig{}, errVariableNotFound
 	}
 
+	maxRetryCountStr, ok := os.LookupEnv(rabbitMQQMaxRetryCountEnv)
+	if !ok {
+		return &rabbitMQConsumerConfig{}, errVariableNotFound
+	}
+
+	maxRetryCount, err := strconv.Atoi(maxRetryCountStr)
+	if err != nil {
+		return nil, errVariableParse
+	}
+
 	return &rabbitMQConsumerConfig{
-		host:     host,
-		port:     port,
-		username: username,
-		password: password,
-		queue:    queue,
+		host:          host,
+		port:          port,
+		username:      username,
+		password:      password,
+		queue:         queue,
+		maxRetryCount: maxRetryCount,
 	}, nil
 }
 
@@ -67,4 +82,8 @@ func (c *rabbitMQConsumerConfig) URL() string {
 
 func (c *rabbitMQConsumerConfig) Queue() string {
 	return c.queue
+}
+
+func (c *rabbitMQConsumerConfig) MaxRetryCount() int {
+	return c.maxRetryCount
 }

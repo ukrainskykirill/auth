@@ -30,7 +30,7 @@ func main() {
 		_ = ch.Close()
 	}()
 
-	userIn := map[string]string{"email": "test@test.com", "name": "Test2", "password": "pass", "password_confirm": "pass", "role": "USER"}
+	userIn := map[string]string{"email": "test@test.com", "name": "Test3", "password": "pass", "password_confirm": "pass", "role": "USER"}
 	body, err := json.Marshal(userIn)
 	if err != nil {
 		fmt.Println(err)

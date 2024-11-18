@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -10,16 +11,22 @@ import (
 type MsgHandler func(ctx context.Context, msg *amqp.Delivery) error
 
 type Consumer struct {
-	connection *amqp.Connection
-	channel    *amqp.Channel
-	done       chan error
-	handler    MsgHandler
-	tag        string
-	queue      string
+	connection    *amqp.Connection
+	channel       *amqp.Channel
+	done          chan error
+	handler       MsgHandler
+	tag           string
+	queue         string
+	maxRetryCount int
 }
 
-func NewConsumer(url, queue string) (*Consumer, error) {
-	connection, err := amqp.Dial(url)
+func NewConsumer(url, queue string, maxRetryCount int) (*Consumer, error) {
+	connection, err := amqp.DialConfig(
+		url,
+		amqp.Config{
+			Heartbeat: time.Duration(60 * time.Minute),
+		},
+	)
 	if err != nil {
 		return &Consumer{}, fmt.Errorf("consumer dial: %s", err)
 	}
@@ -30,12 +37,13 @@ func NewConsumer(url, queue string) (*Consumer, error) {
 	}
 
 	return &Consumer{
-		connection: connection,
-		channel:    channel,
-		done:       make(chan error),
-		handler:    nil,
-		tag:        "",
-		queue:      queue,
+		connection:    connection,
+		channel:       channel,
+		done:          make(chan error),
+		handler:       nil,
+		tag:           "",
+		queue:         queue,
+		maxRetryCount: maxRetryCount,
 	}, nil
 }
 
@@ -48,7 +56,7 @@ func (c *Consumer) Consume(ctx context.Context, handler MsgHandler) error {
 	deliveries, err := c.channel.Consume(
 		c.queue,
 		c.tag,
-		true,
+		false,
 		false,
 		false,
 		false,
@@ -77,16 +85,39 @@ func (c *Consumer) Shutdown() error {
 }
 
 func (c *Consumer) handle(ctx context.Context, deliveries <-chan amqp.Delivery, done chan error) {
-	for d := range deliveries {
+	for msg := range deliveries {
 		fmt.Printf(
 			"got %dB delivery: [%v] %q",
-			len(d.Body),
-			d.DeliveryTag,
-			d.Body,
+			len(msg.Body),
+			msg.DeliveryTag,
+			msg.Body,
 		)
-		c.handler(ctx, &d)
-		// d.Ack(false)
+		if err := c.handler(ctx, &msg); err != nil {
+			c.msgRetry(msg)
+		} else {
+			msg.Ack(false)
+		}
 	}
 	fmt.Printf("handle: deliveries channel closed")
 	done <- nil
+}
+
+func (c *Consumer) msgRetry(msg amqp.Delivery) {
+	if msg.Headers["x-death"] != nil {
+		for _, death := range msg.Headers["x-death"].([]interface{}) {
+			deathMap := death.(amqp.Table)
+			if deathMap["reason"] == "rejected" {
+				count, ok := deathMap["count"].(int)
+				if ok && count < c.maxRetryCount {
+					msg.Nack(false, false)
+				} else {
+					msg.Ack(false)
+					fmt.Println("maximum retries has been exceeded: %v", msg.MessageId)
+				}
+				break
+			}
+		}
+	} else {
+		msg.Nack(false, false)
+	}
 }

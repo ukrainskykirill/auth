@@ -183,6 +183,7 @@ func (sp *serviceProvider) RabbitMQConsumer() rabbitmq.IConsumer {
 		sp.rabbitMQConsumer, err = rabbitmqConsumer.NewConsumer(
 			sp.RabbitMQConsumerConfig().URL(),
 			sp.RabbitMQConsumerConfig().Queue(),
+			sp.RabbitMQConsumerConfig().MaxRetryCount(),
 		)
 		if err != nil {
 			fmt.Println(err)
