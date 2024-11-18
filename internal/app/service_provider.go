@@ -182,6 +182,7 @@ func (sp *serviceProvider) RabbitMQConsumer() rabbitmq.IConsumer {
 		var err error
 		sp.rabbitMQConsumer, err = rabbitmqConsumer.NewConsumer(
 			sp.RabbitMQConsumerConfig().URL(),
+			sp.RabbitMQConsumerConfig().Queue(),
 		)
 		if err != nil {
 			fmt.Println(err)

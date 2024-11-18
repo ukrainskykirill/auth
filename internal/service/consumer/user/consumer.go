@@ -39,7 +39,7 @@ func (s *userCreateService) run(ctx context.Context) <-chan error {
 	go func() {
 		defer close(errChan)
 
-		errChan <- s.consumer.Consume(ctx, "user-create", s.UserCreateHandler)
+		errChan <- s.consumer.Consume(ctx, s.UserCreateHandler)
 	}()
 
 	return errChan

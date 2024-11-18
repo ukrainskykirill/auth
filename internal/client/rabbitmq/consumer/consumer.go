@@ -15,9 +15,10 @@ type Consumer struct {
 	done       chan error
 	handler    MsgHandler
 	tag        string
+	queue      string
 }
 
-func NewConsumer(url string) (*Consumer, error) {
+func NewConsumer(url, queue string) (*Consumer, error) {
 	connection, err := amqp.Dial(url)
 	if err != nil {
 		return &Consumer{}, fmt.Errorf("consumer dial: %s", err)
@@ -34,17 +35,18 @@ func NewConsumer(url string) (*Consumer, error) {
 		done:       make(chan error),
 		handler:    nil,
 		tag:        "",
+		queue:      queue,
 	}, nil
 }
 
-func (c *Consumer) Consume(ctx context.Context, queue string, handler MsgHandler) error {
+func (c *Consumer) Consume(ctx context.Context, handler MsgHandler) error {
 	c.handler = handler
 	if c.handler == nil {
 		return fmt.Errorf("Message handler is nil")
 	}
 
 	deliveries, err := c.channel.Consume(
-		queue,
+		c.queue,
 		c.tag,
 		true,
 		false,

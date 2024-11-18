@@ -15,6 +15,7 @@ const (
 
 type RabbitMQConsumerConfig interface {
 	URL() string
+	Queue() string
 }
 
 type rabbitMQConsumerConfig struct {
@@ -25,7 +26,7 @@ type rabbitMQConsumerConfig struct {
 	queue    string
 }
 
-func NewRabbitMQConsumerConfig() (*rabbitMQConsumerConfig, error) {
+func NewRabbitMQConsumerConfig() (RabbitMQConsumerConfig, error) {
 	host, ok := os.LookupEnv(rabbitMQHostEnv)
 	if !ok {
 		return &rabbitMQConsumerConfig{}, errVariableNotFound
@@ -62,4 +63,8 @@ func NewRabbitMQConsumerConfig() (*rabbitMQConsumerConfig, error) {
 
 func (c *rabbitMQConsumerConfig) URL() string {
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", c.username, c.password, c.host, c.port)
+}
+
+func (c *rabbitMQConsumerConfig) Queue() string {
+	return c.queue
 }

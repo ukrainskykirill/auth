@@ -7,5 +7,5 @@ import (
 )
 
 type IConsumer interface {
-	Consume(ctx context.Context, queue string, handler consumer.MsgHandler) error
+	Consume(ctx context.Context, handler consumer.MsgHandler) error
 }
