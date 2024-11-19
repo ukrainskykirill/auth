@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package auth_v1;
+
+option go_package = "github.com/ukrainskykirill/auth/pkg/auth_v1;auth_v1";
+
+
+service AuthV1 {
+    rpc Login(LoginRequest) returns (TokensResponse);
+    rpc GetRefreshToken(GetRefreshTokenRequest) returns (TokensResponse);
+}
+
+message LoginRequest {
+    string name = 1;
+    string password = 2;
+}
+
+message TokensResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+}
+
+message GetRefreshTokenRequest {
+    string old_refresh_token = 1;
+}
