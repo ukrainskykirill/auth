@@ -2,25 +2,25 @@ package auth
 
 import (
 	"context"
-
-	"golang.org/x/crypto/bcrypt"
+	"fmt"
 
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 
-func (s *authServ) Login(ctx context.Context, loginIn *model.LoginIn) (*model.TokensOut, error) {
-	authInfo, err := s.userRepo.GetUserAuthInfo(ctx, loginIn.Name)
+func (s *authServ) GetTokens(ctx context.Context, oldRefreshToken string) (*model.TokensOut, error) {
+	parsedRefreshClaims, err := s.parseRefreshToken(ctx, oldRefreshToken)
 	if err != nil {
 		return &model.TokensOut{}, err
 	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(authInfo.Password), []byte(loginIn.Password))
+	fmt.Printf("parsed refresh token: %s", parsedRefreshClaims.Name)
+	authInfo, err := s.userRepo.GetUserAuthInfo(ctx, parsedRefreshClaims.Name)
 	if err != nil {
 		return &model.TokensOut{}, err
 	}
+	fmt.Printf("parsed refresh token: %s", parsedRefreshClaims.Name)
 
 	authInfoToClaims := model.AuthInfoToClaims{
-		Name: loginIn.Name,
+		Name: parsedRefreshClaims.Name,
 		Role: authInfo.Role,
 	}
 

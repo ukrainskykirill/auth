@@ -24,3 +24,8 @@ type RepoUser struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
+
+type RepoUserAuthInfo struct {
+	Password string `db:"password"`
+	Role     string `db:"role"`
+}

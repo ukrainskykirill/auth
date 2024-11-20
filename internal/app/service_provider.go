@@ -38,6 +38,7 @@ type serviceProvider struct {
 	grpcConfig             config.GRPCConfig
 	redisConfig            config.RedisConfig
 	rabbitmqConsumerConfig config.RabbitMQConsumerConfig
+	authConfig             config.AuthConfig
 
 	redisPool   redigo.Pool
 	redisClient cache.Client
@@ -100,6 +101,17 @@ func (sp *serviceProvider) RabbitMQConsumerConfig() config.RabbitMQConsumerConfi
 		sp.rabbitmqConsumerConfig = cfg
 	}
 	return sp.rabbitmqConsumerConfig
+}
+
+func (sp *serviceProvider) AuthConfig() config.AuthConfig {
+	if sp.authConfig == nil {
+		cfg, err := config.NewAuthConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %s", err.Error())
+		}
+		sp.authConfig = cfg
+	}
+	return sp.authConfig
 }
 
 func (sp *serviceProvider) DBClient(ctx context.Context) db.Client {
@@ -196,7 +208,14 @@ func (sp *serviceProvider) UserService(ctx context.Context) service.UserService 
 
 func (sp *serviceProvider) AuthService(ctx context.Context) service.AuthService {
 	if sp.authServ == nil {
-		sp.authServ = authServ.NewAuthServ(sp.UserRepo(ctx), sp.AccessRepo(ctx), sp.AuthCache(ctx))
+		sp.authServ = authServ.NewAuthServ(
+			sp.UserRepo(ctx),
+			sp.AccessRepo(ctx),
+			sp.AuthCache(ctx),
+			sp.AuthConfig().TokenSecret(),
+			sp.AuthConfig().AccessTokenTTL(),
+			sp.AuthConfig().RefreshTokenTTL(),
+		)
 	}
 	return sp.authServ
 }

@@ -7,19 +7,28 @@ import (
 )
 
 type authServ struct {
-	userRepo   repository.UserRepository
-	accessRepo repository.AccessRepository
-	cache      cache.AuthCache
+	userRepo        repository.UserRepository
+	accessRepo      repository.AccessRepository
+	cache           cache.AuthCache
+	tokenSecret     string
+	accessTokenTTL  int
+	refreshTokenTTL int
 }
 
 func NewAuthServ(
 	userRepo repository.UserRepository,
 	accessRepo repository.AccessRepository,
 	cache cache.AuthCache,
+	tokenSecret string,
+	accessTokenTTL int,
+	refreshTokenTTL int,
 ) service.AuthService {
 	return &authServ{
-		userRepo:   userRepo,
-		accessRepo: accessRepo,
-		cache:      cache,
+		userRepo:        userRepo,
+		accessRepo:      accessRepo,
+		cache:           cache,
+		tokenSecret:     tokenSecret,
+		accessTokenTTL:  accessTokenTTL,
+		refreshTokenTTL: refreshTokenTTL,
 	}
 }

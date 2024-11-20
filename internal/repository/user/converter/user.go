@@ -15,3 +15,10 @@ func ToUserFromRepo(user repoModel.RepoUser) *model.User {
 		UpdatedAt: user.UpdatedAt,
 	}
 }
+
+func ToUserAuthInfoFromRepo(info repoModel.RepoUserAuthInfo) *model.UserAuthInfo {
+	return &model.UserAuthInfo{
+		Password: info.Password,
+		Role:     info.Role,
+	}
+}

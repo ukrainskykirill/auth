@@ -24,6 +24,7 @@ func (s *userServ) Create(ctx context.Context, user *model.UserIn) (int64, error
 	if err != nil {
 		return 0, fmt.Errorf("service.Create - %w: generate password error %w", prError.ErrPassword, err)
 	}
+
 	user.Password = string(password)
 
 	userID, err := s.repo.Create(ctx, user)

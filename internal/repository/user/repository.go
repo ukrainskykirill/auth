@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	userRepo     = "user_repository"
-	createRepoFn = userRepo + "." + "Create"
-	deleteRepoFn = userRepo + "." + "Delete"
-	updateRepoFn = userRepo + "." + "Update"
-	getRepoFn    = userRepo + "." + "Get"
+	userRepo          = "user_repository"
+	createRepoFn      = userRepo + "." + "Create"
+	deleteRepoFn      = userRepo + "." + "Delete"
+	updateRepoFn      = userRepo + "." + "Update"
+	getRepoFn         = userRepo + "." + "Get"
+	getPasswordByName = userRepo + "." + "GetPasswordByName"
 )
 
 type repo struct {
@@ -162,4 +163,27 @@ func (r *repo) Get(ctx context.Context, userID int64) (*model.User, error) {
 	userRow.ID = userID
 	fmt.Println(color.BlackString("Get user: id %d, with ctx: %v", userID, ctx))
 	return converter.ToUserFromRepo(userRow), nil
+}
+
+func (r *repo) GetUserAuthInfo(ctx context.Context, name string) (*model.UserAuthInfo, error) {
+	var userAuthInfo modelRepo.RepoUserAuthInfo
+
+	q := db.Query{
+		Name:     getPasswordByName,
+		QueryRaw: `SELECT role, password FROM users WHERE name = $1;`,
+	}
+
+	err := r.db.DB().QueryRowContext(
+		ctx,
+		q,
+		name,
+	).Scan(&userAuthInfo.Role, &userAuthInfo.Password)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &model.UserAuthInfo{}, prError.ErrUserNotFound
+		}
+		return &model.UserAuthInfo{}, err
+	}
+
+	return converter.ToUserAuthInfoFromRepo(userAuthInfo), nil
 }

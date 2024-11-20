@@ -16,5 +16,6 @@ type UserService interface {
 type AuthService interface {
 	Login(ctx context.Context, loginIn *model.LoginIn) (*model.TokensOut, error)
 	GetTokens(ctx context.Context, oldRefreshToken string) (*model.TokensOut, error)
-	Check(ctx context.Context, endpoint string) error
+	Check(ctx context.Context, role, endpoint string) error
+	ParseAccessToken(accessToken string) (*model.UserAccessClaims, error)
 }

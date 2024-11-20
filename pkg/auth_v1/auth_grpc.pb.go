@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthV1Client interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*TokensResponse, error)
-	GetRefreshToken(ctx context.Context, in *GetRefreshTokenRequest, opts ...grpc.CallOption) (*TokensResponse, error)
+	GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (*TokensResponse, error)
 }
 
 type authV1Client struct {
@@ -43,9 +43,9 @@ func (c *authV1Client) Login(ctx context.Context, in *LoginRequest, opts ...grpc
 	return out, nil
 }
 
-func (c *authV1Client) GetRefreshToken(ctx context.Context, in *GetRefreshTokenRequest, opts ...grpc.CallOption) (*TokensResponse, error) {
+func (c *authV1Client) GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (*TokensResponse, error) {
 	out := new(TokensResponse)
-	err := c.cc.Invoke(ctx, "/auth_v1.AuthV1/GetRefreshToken", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth_v1.AuthV1/GetTokens", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *authV1Client) GetRefreshToken(ctx context.Context, in *GetRefreshTokenR
 // for forward compatibility
 type AuthV1Server interface {
 	Login(context.Context, *LoginRequest) (*TokensResponse, error)
-	GetRefreshToken(context.Context, *GetRefreshTokenRequest) (*TokensResponse, error)
+	GetTokens(context.Context, *GetTokensRequest) (*TokensResponse, error)
 	mustEmbedUnimplementedAuthV1Server()
 }
 
@@ -68,8 +68,8 @@ type UnimplementedAuthV1Server struct {
 func (UnimplementedAuthV1Server) Login(context.Context, *LoginRequest) (*TokensResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedAuthV1Server) GetRefreshToken(context.Context, *GetRefreshTokenRequest) (*TokensResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRefreshToken not implemented")
+func (UnimplementedAuthV1Server) GetTokens(context.Context, *GetTokensRequest) (*TokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTokens not implemented")
 }
 func (UnimplementedAuthV1Server) mustEmbedUnimplementedAuthV1Server() {}
 
@@ -102,20 +102,20 @@ func _AuthV1_Login_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthV1_GetRefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRefreshTokenRequest)
+func _AuthV1_GetTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTokensRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthV1Server).GetRefreshToken(ctx, in)
+		return srv.(AuthV1Server).GetTokens(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth_v1.AuthV1/GetRefreshToken",
+		FullMethod: "/auth_v1.AuthV1/GetTokens",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthV1Server).GetRefreshToken(ctx, req.(*GetRefreshTokenRequest))
+		return srv.(AuthV1Server).GetTokens(ctx, req.(*GetTokensRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +132,8 @@ var AuthV1_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthV1_Login_Handler,
 		},
 		{
-			MethodName: "GetRefreshToken",
-			Handler:    _AuthV1_GetRefreshToken_Handler,
+			MethodName: "GetTokens",
+			Handler:    _AuthV1_GetTokens_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
