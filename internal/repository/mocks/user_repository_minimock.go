@@ -14,7 +14,7 @@ import (
 	"github.com/ukrainskykirill/auth/internal/model"
 )
 
-// UserRepositoryMock implements repository.UserRepository
+// UserRepositoryMock implements UserRepository
 type UserRepositoryMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
@@ -37,6 +37,12 @@ type UserRepositoryMock struct {
 	beforeGetCounter uint64
 	GetMock          mUserRepositoryMockGet
 
+	funcGetUserAuthInfo          func(ctx context.Context, name string) (up1 *model.UserAuthInfo, err error)
+	inspectFuncGetUserAuthInfo   func(ctx context.Context, name string)
+	afterGetUserAuthInfoCounter  uint64
+	beforeGetUserAuthInfoCounter uint64
+	GetUserAuthInfoMock          mUserRepositoryMockGetUserAuthInfo
+
 	funcUpdate          func(ctx context.Context, user *model.UserInUpdate) (err error)
 	inspectFuncUpdate   func(ctx context.Context, user *model.UserInUpdate)
 	afterUpdateCounter  uint64
@@ -44,7 +50,7 @@ type UserRepositoryMock struct {
 	UpdateMock          mUserRepositoryMockUpdate
 }
 
-// NewUserRepositoryMock returns a mock for repository.UserRepository
+// NewUserRepositoryMock returns a mock for UserRepository
 func NewUserRepositoryMock(t minimock.Tester) *UserRepositoryMock {
 	m := &UserRepositoryMock{t: t}
 
@@ -60,6 +66,9 @@ func NewUserRepositoryMock(t minimock.Tester) *UserRepositoryMock {
 
 	m.GetMock = mUserRepositoryMockGet{mock: m}
 	m.GetMock.callArgs = []*UserRepositoryMockGetParams{}
+
+	m.GetUserAuthInfoMock = mUserRepositoryMockGetUserAuthInfo{mock: m}
+	m.GetUserAuthInfoMock.callArgs = []*UserRepositoryMockGetUserAuthInfoParams{}
 
 	m.UpdateMock = mUserRepositoryMockUpdate{mock: m}
 	m.UpdateMock.callArgs = []*UserRepositoryMockUpdateParams{}
@@ -265,7 +274,7 @@ func (mmCreate *mUserRepositoryMockCreate) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Create implements repository.UserRepository
+// Create implements UserRepository
 func (mmCreate *UserRepositoryMock) Create(ctx context.Context, user *model.UserIn) (i1 int64, err error) {
 	mm_atomic.AddUint64(&mmCreate.beforeCreateCounter, 1)
 	defer mm_atomic.AddUint64(&mmCreate.afterCreateCounter, 1)
@@ -585,7 +594,7 @@ func (mmDelete *mUserRepositoryMockDelete) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Delete implements repository.UserRepository
+// Delete implements UserRepository
 func (mmDelete *UserRepositoryMock) Delete(ctx context.Context, userID int64) (err error) {
 	mm_atomic.AddUint64(&mmDelete.beforeDeleteCounter, 1)
 	defer mm_atomic.AddUint64(&mmDelete.afterDeleteCounter, 1)
@@ -906,7 +915,7 @@ func (mmGet *mUserRepositoryMockGet) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Get implements repository.UserRepository
+// Get implements UserRepository
 func (mmGet *UserRepositoryMock) Get(ctx context.Context, userID int64) (up1 *model.User, err error) {
 	mm_atomic.AddUint64(&mmGet.beforeGetCounter, 1)
 	defer mm_atomic.AddUint64(&mmGet.afterGetCounter, 1)
@@ -1028,6 +1037,327 @@ func (m *UserRepositoryMock) MinimockGetInspect() {
 	if !m.GetMock.invocationsDone() && afterGetCounter > 0 {
 		m.t.Errorf("Expected %d calls to UserRepositoryMock.Get but found %d calls",
 			mm_atomic.LoadUint64(&m.GetMock.expectedInvocations), afterGetCounter)
+	}
+}
+
+type mUserRepositoryMockGetUserAuthInfo struct {
+	optional           bool
+	mock               *UserRepositoryMock
+	defaultExpectation *UserRepositoryMockGetUserAuthInfoExpectation
+	expectations       []*UserRepositoryMockGetUserAuthInfoExpectation
+
+	callArgs []*UserRepositoryMockGetUserAuthInfoParams
+	mutex    sync.RWMutex
+
+	expectedInvocations uint64
+}
+
+// UserRepositoryMockGetUserAuthInfoExpectation specifies expectation struct of the UserRepository.GetUserAuthInfo
+type UserRepositoryMockGetUserAuthInfoExpectation struct {
+	mock      *UserRepositoryMock
+	params    *UserRepositoryMockGetUserAuthInfoParams
+	paramPtrs *UserRepositoryMockGetUserAuthInfoParamPtrs
+	results   *UserRepositoryMockGetUserAuthInfoResults
+	Counter   uint64
+}
+
+// UserRepositoryMockGetUserAuthInfoParams contains parameters of the UserRepository.GetUserAuthInfo
+type UserRepositoryMockGetUserAuthInfoParams struct {
+	ctx  context.Context
+	name string
+}
+
+// UserRepositoryMockGetUserAuthInfoParamPtrs contains pointers to parameters of the UserRepository.GetUserAuthInfo
+type UserRepositoryMockGetUserAuthInfoParamPtrs struct {
+	ctx  *context.Context
+	name *string
+}
+
+// UserRepositoryMockGetUserAuthInfoResults contains results of the UserRepository.GetUserAuthInfo
+type UserRepositoryMockGetUserAuthInfoResults struct {
+	up1 *model.UserAuthInfo
+	err error
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Optional() *mUserRepositoryMockGetUserAuthInfo {
+	mmGetUserAuthInfo.optional = true
+	return mmGetUserAuthInfo
+}
+
+// Expect sets up expected params for UserRepository.GetUserAuthInfo
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Expect(ctx context.Context, name string) *mUserRepositoryMockGetUserAuthInfo {
+	if mmGetUserAuthInfo.mock.funcGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Set")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation == nil {
+		mmGetUserAuthInfo.defaultExpectation = &UserRepositoryMockGetUserAuthInfoExpectation{}
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation.paramPtrs != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by ExpectParams functions")
+	}
+
+	mmGetUserAuthInfo.defaultExpectation.params = &UserRepositoryMockGetUserAuthInfoParams{ctx, name}
+	for _, e := range mmGetUserAuthInfo.expectations {
+		if minimock.Equal(e.params, mmGetUserAuthInfo.defaultExpectation.params) {
+			mmGetUserAuthInfo.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetUserAuthInfo.defaultExpectation.params)
+		}
+	}
+
+	return mmGetUserAuthInfo
+}
+
+// ExpectCtxParam1 sets up expected param ctx for UserRepository.GetUserAuthInfo
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) ExpectCtxParam1(ctx context.Context) *mUserRepositoryMockGetUserAuthInfo {
+	if mmGetUserAuthInfo.mock.funcGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Set")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation == nil {
+		mmGetUserAuthInfo.defaultExpectation = &UserRepositoryMockGetUserAuthInfoExpectation{}
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation.params != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Expect")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation.paramPtrs == nil {
+		mmGetUserAuthInfo.defaultExpectation.paramPtrs = &UserRepositoryMockGetUserAuthInfoParamPtrs{}
+	}
+	mmGetUserAuthInfo.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmGetUserAuthInfo
+}
+
+// ExpectNameParam2 sets up expected param name for UserRepository.GetUserAuthInfo
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) ExpectNameParam2(name string) *mUserRepositoryMockGetUserAuthInfo {
+	if mmGetUserAuthInfo.mock.funcGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Set")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation == nil {
+		mmGetUserAuthInfo.defaultExpectation = &UserRepositoryMockGetUserAuthInfoExpectation{}
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation.params != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Expect")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation.paramPtrs == nil {
+		mmGetUserAuthInfo.defaultExpectation.paramPtrs = &UserRepositoryMockGetUserAuthInfoParamPtrs{}
+	}
+	mmGetUserAuthInfo.defaultExpectation.paramPtrs.name = &name
+
+	return mmGetUserAuthInfo
+}
+
+// Inspect accepts an inspector function that has same arguments as the UserRepository.GetUserAuthInfo
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Inspect(f func(ctx context.Context, name string)) *mUserRepositoryMockGetUserAuthInfo {
+	if mmGetUserAuthInfo.mock.inspectFuncGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("Inspect function is already set for UserRepositoryMock.GetUserAuthInfo")
+	}
+
+	mmGetUserAuthInfo.mock.inspectFuncGetUserAuthInfo = f
+
+	return mmGetUserAuthInfo
+}
+
+// Return sets up results that will be returned by UserRepository.GetUserAuthInfo
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Return(up1 *model.UserAuthInfo, err error) *UserRepositoryMock {
+	if mmGetUserAuthInfo.mock.funcGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Set")
+	}
+
+	if mmGetUserAuthInfo.defaultExpectation == nil {
+		mmGetUserAuthInfo.defaultExpectation = &UserRepositoryMockGetUserAuthInfoExpectation{mock: mmGetUserAuthInfo.mock}
+	}
+	mmGetUserAuthInfo.defaultExpectation.results = &UserRepositoryMockGetUserAuthInfoResults{up1, err}
+	return mmGetUserAuthInfo.mock
+}
+
+// Set uses given function f to mock the UserRepository.GetUserAuthInfo method
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Set(f func(ctx context.Context, name string) (up1 *model.UserAuthInfo, err error)) *UserRepositoryMock {
+	if mmGetUserAuthInfo.defaultExpectation != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("Default expectation is already set for the UserRepository.GetUserAuthInfo method")
+	}
+
+	if len(mmGetUserAuthInfo.expectations) > 0 {
+		mmGetUserAuthInfo.mock.t.Fatalf("Some expectations are already set for the UserRepository.GetUserAuthInfo method")
+	}
+
+	mmGetUserAuthInfo.mock.funcGetUserAuthInfo = f
+	return mmGetUserAuthInfo.mock
+}
+
+// When sets expectation for the UserRepository.GetUserAuthInfo which will trigger the result defined by the following
+// Then helper
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) When(ctx context.Context, name string) *UserRepositoryMockGetUserAuthInfoExpectation {
+	if mmGetUserAuthInfo.mock.funcGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.mock.t.Fatalf("UserRepositoryMock.GetUserAuthInfo mock is already set by Set")
+	}
+
+	expectation := &UserRepositoryMockGetUserAuthInfoExpectation{
+		mock:   mmGetUserAuthInfo.mock,
+		params: &UserRepositoryMockGetUserAuthInfoParams{ctx, name},
+	}
+	mmGetUserAuthInfo.expectations = append(mmGetUserAuthInfo.expectations, expectation)
+	return expectation
+}
+
+// Then sets up UserRepository.GetUserAuthInfo return parameters for the expectation previously defined by the When method
+func (e *UserRepositoryMockGetUserAuthInfoExpectation) Then(up1 *model.UserAuthInfo, err error) *UserRepositoryMock {
+	e.results = &UserRepositoryMockGetUserAuthInfoResults{up1, err}
+	return e.mock
+}
+
+// Times sets number of times UserRepository.GetUserAuthInfo should be invoked
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Times(n uint64) *mUserRepositoryMockGetUserAuthInfo {
+	if n == 0 {
+		mmGetUserAuthInfo.mock.t.Fatalf("Times of UserRepositoryMock.GetUserAuthInfo mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmGetUserAuthInfo.expectedInvocations, n)
+	return mmGetUserAuthInfo
+}
+
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) invocationsDone() bool {
+	if len(mmGetUserAuthInfo.expectations) == 0 && mmGetUserAuthInfo.defaultExpectation == nil && mmGetUserAuthInfo.mock.funcGetUserAuthInfo == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmGetUserAuthInfo.mock.afterGetUserAuthInfoCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmGetUserAuthInfo.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// GetUserAuthInfo implements UserRepository
+func (mmGetUserAuthInfo *UserRepositoryMock) GetUserAuthInfo(ctx context.Context, name string) (up1 *model.UserAuthInfo, err error) {
+	mm_atomic.AddUint64(&mmGetUserAuthInfo.beforeGetUserAuthInfoCounter, 1)
+	defer mm_atomic.AddUint64(&mmGetUserAuthInfo.afterGetUserAuthInfoCounter, 1)
+
+	if mmGetUserAuthInfo.inspectFuncGetUserAuthInfo != nil {
+		mmGetUserAuthInfo.inspectFuncGetUserAuthInfo(ctx, name)
+	}
+
+	mm_params := UserRepositoryMockGetUserAuthInfoParams{ctx, name}
+
+	// Record call args
+	mmGetUserAuthInfo.GetUserAuthInfoMock.mutex.Lock()
+	mmGetUserAuthInfo.GetUserAuthInfoMock.callArgs = append(mmGetUserAuthInfo.GetUserAuthInfoMock.callArgs, &mm_params)
+	mmGetUserAuthInfo.GetUserAuthInfoMock.mutex.Unlock()
+
+	for _, e := range mmGetUserAuthInfo.GetUserAuthInfoMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.up1, e.results.err
+		}
+	}
+
+	if mmGetUserAuthInfo.GetUserAuthInfoMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmGetUserAuthInfo.GetUserAuthInfoMock.defaultExpectation.Counter, 1)
+		mm_want := mmGetUserAuthInfo.GetUserAuthInfoMock.defaultExpectation.params
+		mm_want_ptrs := mmGetUserAuthInfo.GetUserAuthInfoMock.defaultExpectation.paramPtrs
+
+		mm_got := UserRepositoryMockGetUserAuthInfoParams{ctx, name}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmGetUserAuthInfo.t.Errorf("UserRepositoryMock.GetUserAuthInfo got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.name != nil && !minimock.Equal(*mm_want_ptrs.name, mm_got.name) {
+				mmGetUserAuthInfo.t.Errorf("UserRepositoryMock.GetUserAuthInfo got unexpected parameter name, want: %#v, got: %#v%s\n", *mm_want_ptrs.name, mm_got.name, minimock.Diff(*mm_want_ptrs.name, mm_got.name))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmGetUserAuthInfo.t.Errorf("UserRepositoryMock.GetUserAuthInfo got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmGetUserAuthInfo.GetUserAuthInfoMock.defaultExpectation.results
+		if mm_results == nil {
+			mmGetUserAuthInfo.t.Fatal("No results are set for the UserRepositoryMock.GetUserAuthInfo")
+		}
+		return (*mm_results).up1, (*mm_results).err
+	}
+	if mmGetUserAuthInfo.funcGetUserAuthInfo != nil {
+		return mmGetUserAuthInfo.funcGetUserAuthInfo(ctx, name)
+	}
+	mmGetUserAuthInfo.t.Fatalf("Unexpected call to UserRepositoryMock.GetUserAuthInfo. %v %v", ctx, name)
+	return
+}
+
+// GetUserAuthInfoAfterCounter returns a count of finished UserRepositoryMock.GetUserAuthInfo invocations
+func (mmGetUserAuthInfo *UserRepositoryMock) GetUserAuthInfoAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetUserAuthInfo.afterGetUserAuthInfoCounter)
+}
+
+// GetUserAuthInfoBeforeCounter returns a count of UserRepositoryMock.GetUserAuthInfo invocations
+func (mmGetUserAuthInfo *UserRepositoryMock) GetUserAuthInfoBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmGetUserAuthInfo.beforeGetUserAuthInfoCounter)
+}
+
+// Calls returns a list of arguments used in each call to UserRepositoryMock.GetUserAuthInfo.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmGetUserAuthInfo *mUserRepositoryMockGetUserAuthInfo) Calls() []*UserRepositoryMockGetUserAuthInfoParams {
+	mmGetUserAuthInfo.mutex.RLock()
+
+	argCopy := make([]*UserRepositoryMockGetUserAuthInfoParams, len(mmGetUserAuthInfo.callArgs))
+	copy(argCopy, mmGetUserAuthInfo.callArgs)
+
+	mmGetUserAuthInfo.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockGetUserAuthInfoDone returns true if the count of the GetUserAuthInfo invocations corresponds
+// the number of defined expectations
+func (m *UserRepositoryMock) MinimockGetUserAuthInfoDone() bool {
+	if m.GetUserAuthInfoMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.GetUserAuthInfoMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.GetUserAuthInfoMock.invocationsDone()
+}
+
+// MinimockGetUserAuthInfoInspect logs each unmet expectation
+func (m *UserRepositoryMock) MinimockGetUserAuthInfoInspect() {
+	for _, e := range m.GetUserAuthInfoMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to UserRepositoryMock.GetUserAuthInfo with params: %#v", *e.params)
+		}
+	}
+
+	afterGetUserAuthInfoCounter := mm_atomic.LoadUint64(&m.afterGetUserAuthInfoCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.GetUserAuthInfoMock.defaultExpectation != nil && afterGetUserAuthInfoCounter < 1 {
+		if m.GetUserAuthInfoMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to UserRepositoryMock.GetUserAuthInfo")
+		} else {
+			m.t.Errorf("Expected call to UserRepositoryMock.GetUserAuthInfo with params: %#v", *m.GetUserAuthInfoMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcGetUserAuthInfo != nil && afterGetUserAuthInfoCounter < 1 {
+		m.t.Error("Expected call to UserRepositoryMock.GetUserAuthInfo")
+	}
+
+	if !m.GetUserAuthInfoMock.invocationsDone() && afterGetUserAuthInfoCounter > 0 {
+		m.t.Errorf("Expected %d calls to UserRepositoryMock.GetUserAuthInfo but found %d calls",
+			mm_atomic.LoadUint64(&m.GetUserAuthInfoMock.expectedInvocations), afterGetUserAuthInfoCounter)
 	}
 }
 
@@ -1226,7 +1556,7 @@ func (mmUpdate *mUserRepositoryMockUpdate) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Update implements repository.UserRepository
+// Update implements UserRepository
 func (mmUpdate *UserRepositoryMock) Update(ctx context.Context, user *model.UserInUpdate) (err error) {
 	mm_atomic.AddUint64(&mmUpdate.beforeUpdateCounter, 1)
 	defer mm_atomic.AddUint64(&mmUpdate.afterUpdateCounter, 1)
@@ -1361,6 +1691,8 @@ func (m *UserRepositoryMock) MinimockFinish() {
 
 			m.MinimockGetInspect()
 
+			m.MinimockGetUserAuthInfoInspect()
+
 			m.MinimockUpdateInspect()
 		}
 	})
@@ -1388,5 +1720,6 @@ func (m *UserRepositoryMock) minimockDone() bool {
 		m.MinimockCreateDone() &&
 		m.MinimockDeleteDone() &&
 		m.MinimockGetDone() &&
+		m.MinimockGetUserAuthInfoDone() &&
 		m.MinimockUpdateDone()
 }

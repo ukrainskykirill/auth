@@ -11,3 +11,8 @@ type UserCache interface {
 	Get(ctx context.Context, id int64) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
 }
+
+type AuthCache interface {
+	Create(ctx context.Context) error
+	Get(ctx context.Context) error
+}

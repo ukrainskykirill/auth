@@ -13,16 +13,21 @@ import (
 	"github.com/ukrainskykirill/platform_common/pkg/db/pg"
 	"github.com/ukrainskykirill/platform_common/pkg/db/transaction"
 
+	accessApi "github.com/ukrainskykirill/auth/internal/api/access"
+	authApi "github.com/ukrainskykirill/auth/internal/api/auth"
 	"github.com/ukrainskykirill/auth/internal/api/user"
 	userApi "github.com/ukrainskykirill/auth/internal/api/user"
 	prCache "github.com/ukrainskykirill/auth/internal/cache"
+	authCache "github.com/ukrainskykirill/auth/internal/cache/auth"
 	userCache "github.com/ukrainskykirill/auth/internal/cache/user"
 	"github.com/ukrainskykirill/auth/internal/client/rabbitmq"
 	rabbitmqConsumer "github.com/ukrainskykirill/auth/internal/client/rabbitmq/consumer"
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/repository"
+	accessRepo "github.com/ukrainskykirill/auth/internal/repository/access"
 	userRepo "github.com/ukrainskykirill/auth/internal/repository/user"
 	"github.com/ukrainskykirill/auth/internal/service"
+	authServ "github.com/ukrainskykirill/auth/internal/service/auth"
 	consumerService "github.com/ukrainskykirill/auth/internal/service/consumer"
 	userConsumer "github.com/ukrainskykirill/auth/internal/service/consumer/user"
 	userServ "github.com/ukrainskykirill/auth/internal/service/user"
@@ -33,6 +38,7 @@ type serviceProvider struct {
 	grpcConfig             config.GRPCConfig
 	redisConfig            config.RedisConfig
 	rabbitmqConsumerConfig config.RabbitMQConsumerConfig
+	authConfig             config.AuthConfig
 
 	redisPool   redigo.Pool
 	redisClient cache.Client
@@ -43,14 +49,19 @@ type serviceProvider struct {
 	rabbitMQConsumer rabbitmq.IConsumer
 
 	userCache prCache.UserCache
+	authCache prCache.AuthCache
 
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepository
+	accessRepo repository.AccessRepository
 
 	userServ service.UserService
+	authServ service.AuthService
 
 	userCreateConsumer consumerService.ConsumerService
 
-	userAPI *user.Implementation
+	userAPI   *user.Implementation
+	authAPI   *authApi.Implementation
+	accessAPI *accessApi.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -90,6 +101,17 @@ func (sp *serviceProvider) RabbitMQConsumerConfig() config.RabbitMQConsumerConfi
 		sp.rabbitmqConsumerConfig = cfg
 	}
 	return sp.rabbitmqConsumerConfig
+}
+
+func (sp *serviceProvider) AuthConfig() config.AuthConfig {
+	if sp.authConfig == nil {
+		cfg, err := config.NewAuthConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %s", err.Error())
+		}
+		sp.authConfig = cfg
+	}
+	return sp.authConfig
 }
 
 func (sp *serviceProvider) DBClient(ctx context.Context) db.Client {
@@ -153,12 +175,27 @@ func (sp *serviceProvider) UserCache(ctx context.Context) prCache.UserCache {
 	return sp.userCache
 }
 
+func (sp *serviceProvider) AuthCache(ctx context.Context) prCache.AuthCache {
+	if sp.authCache == nil {
+		sp.authCache = authCache.NewCache(sp.RedisClient(ctx))
+	}
+	return sp.authCache
+}
+
 func (sp *serviceProvider) UserRepo(ctx context.Context) repository.UserRepository {
 	if sp.userRepo == nil {
 		sp.userRepo = userRepo.NewUserRepository(sp.DBClient(ctx))
 	}
 
 	return sp.userRepo
+}
+
+func (sp *serviceProvider) AccessRepo(ctx context.Context) repository.AccessRepository {
+	if sp.accessRepo == nil {
+		sp.accessRepo = accessRepo.NewAccessRepository(sp.DBClient(ctx))
+	}
+
+	return sp.accessRepo
 }
 
 func (sp *serviceProvider) UserService(ctx context.Context) service.UserService {
@@ -169,12 +206,41 @@ func (sp *serviceProvider) UserService(ctx context.Context) service.UserService 
 	return sp.userServ
 }
 
+func (sp *serviceProvider) AuthService(ctx context.Context) service.AuthService {
+	if sp.authServ == nil {
+		sp.authServ = authServ.NewAuthServ(
+			sp.UserRepo(ctx),
+			sp.AccessRepo(ctx),
+			sp.AuthCache(ctx),
+			sp.AuthConfig().TokenSecret(),
+			sp.AuthConfig().AccessTokenTTL(),
+			sp.AuthConfig().RefreshTokenTTL(),
+		)
+	}
+	return sp.authServ
+}
+
 func (sp *serviceProvider) UserAPI(ctx context.Context) *user.Implementation {
 	if sp.userAPI == nil {
 		sp.userAPI = userApi.NewImplementation(sp.UserService(ctx))
 	}
 
 	return sp.userAPI
+}
+
+func (sp *serviceProvider) AuthAPI(ctx context.Context) *authApi.Implementation {
+	if sp.authAPI == nil {
+		sp.authAPI = authApi.NewAuthImplementation(sp.AuthService(ctx))
+	}
+
+	return sp.authAPI
+}
+
+func (sp *serviceProvider) AccessAPI(ctx context.Context) *accessApi.Implementation {
+	if sp.accessAPI == nil {
+		sp.accessAPI = accessApi.NewAccessImplementation(sp.AuthService(ctx))
+	}
+	return sp.accessAPI
 }
 
 func (sp *serviceProvider) RabbitMQConsumer() rabbitmq.IConsumer {

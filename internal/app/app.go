@@ -18,6 +18,8 @@ import (
 
 	"github.com/ukrainskykirill/auth/internal/config"
 	"github.com/ukrainskykirill/auth/internal/interceptor"
+	gaccess "github.com/ukrainskykirill/auth/pkg/access_v1"
+	gauth "github.com/ukrainskykirill/auth/pkg/auth_v1"
 	guser "github.com/ukrainskykirill/auth/pkg/user_v1"
 )
 
@@ -129,14 +131,18 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 		log.Fatalf("failed to load TLS keys: %v", err)
 	}
 
+	unaryInterceptor := interceptor.NewInterceptor(a.serviceProvider.AuthService(ctx))
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(creds),
-		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
+		grpc.UnaryInterceptor(unaryInterceptor.UnaryServerInterceptor()),
 	)
 
 	reflection.Register(a.grpcServer)
 
 	guser.RegisterUserV1Server(a.grpcServer, a.serviceProvider.UserAPI(ctx))
+	gauth.RegisterAuthV1Server(a.grpcServer, a.serviceProvider.AuthAPI(ctx))
+	gaccess.RegisterAccessV1Server(a.grpcServer, a.serviceProvider.AccessAPI(ctx))
 
 	return nil
 }
